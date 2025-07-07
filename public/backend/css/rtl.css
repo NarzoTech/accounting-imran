@@ -1,0 +1,132 @@
+.navbar_search {
+    padding-left: 0;
+    padding-right: 10px;
+}
+
+.nav_currency_language {
+    padding-left: 0;
+    padding-right: 15px;
+}
+
+.dropdown-menu-end[data-bs-popper] {
+    right: auto !important;
+    left: -24px !important;
+}
+
+.bg-menu-theme .menu-header:before {
+    left: auto;
+    right: 0;
+}
+
+.bg-menu-theme .menu-sub>.menu-item>.menu-link:before {
+    left: auto;
+    right: 1.4375rem;
+}
+
+.btn-primary svg,
+.btn-primary i {
+    margin-right: 0;
+    margin-left: 5px;
+    transform: rotateY(180deg);
+    -webkit-transform: rotateY(180deg);
+    -moz-transform: rotateY(180deg);
+    -ms-transform: rotateY(180deg);
+    -o-transform: rotateY(180deg);
+}
+
+.nice-select .current,
+.nice-select .option,
+.manage_page_tabs .nav .nav-item .nav-link {
+    text-align: right;
+}
+
+.nice-select:after {
+    right: auto;
+    left: 15px;
+}
+
+.search-wrapper button {
+    right: auto;
+    left: 5px;
+}
+
+.nice-select .option {
+    padding-left: 29px;
+    padding-right: 18px;
+}
+
+.manage_page_tabs {
+    border-right: 0;
+    border-left: 1px solid #ddd;
+    padding-right: 0;
+    padding-left: 25px;
+}
+
+.card-header .lang_change_container ul {
+    padding-left: 0;
+    padding-right: 17px;
+}
+
+.select2-container[dir="rtl"] .select2-selection--single .select2-selection__rendered {
+    padding-right: 0;
+}
+
+.select2-container--default[dir="rtl"] .select2-selection--single .select2-selection__arrow {
+    left: 10px;
+}
+
+.dd3-handle {
+    left: auto !important;
+    right: 12px;
+}
+
+.dd-item>button {
+    float: right !important;
+}
+
+.dd3-content {
+    padding: 0.375rem 50px 0.375rem 0.75rem !important;
+}
+
+.dd3-item>button {
+    margin-left: 0 !important;
+    padding-right: 70px !important;
+}
+
+.dd-item>button:before {
+    left: -23px !important;
+}
+
+input[type="checkbox"] {
+    transform: rotateY(180deg);
+    -webkit-transform: rotateY(180deg);
+    -moz-transform: rotateY(180deg);
+    -ms-transform: rotateY(180deg);
+    -o-transform: rotateY(180deg);
+}
+
+.list_table tr td .btn-sm i {
+    margin: 0 !important;
+    transform: translate(0) !important;
+    -webkit-transform: translate(0) !important;
+    -moz-transform: translate(0) !important;
+    -ms-transform: translate(0) !important;
+    -o-transform: translate(0) !important;
+}
+
+.tox .tox-menubar,
+.tox .tox-toolbar,
+.tox .tox-toolbar__overflow,
+.tox .tox-toolbar__primary {
+    justify-content: end;
+}
+
+.list-unstyled {
+    min-width: 40px;
+    justify-content: end;
+}
+
+.dd-list .dd-list {
+    padding-left: 0 !important;
+    padding-right: 30px;
+}

@@ -1,0 +1,8 @@
+<div class="col-xl-4 col-md-6 wow fadeInUp" data-wow-duration="1.5s">
+    <div class="single_blog">
+        <a href="{{ route('website.blog-details', $blog->slug) }}" class="blog_img">
+            <img loading="lazy" src="{{ asset($blog->image) }}" alt="img" class="img-fluid w-100">
+        </a>
+        @include('website::components.blog-item')
+    </div>
+</div>

@@ -185,8 +185,7 @@ return [
 
     'aliases' => Facade::defaultAliases()->merge([
         // 'GoogleTranslate' => Stichoza\GoogleTranslate\GoogleTranslate::class
-        'Purifier' => Mews\Purifier\Facades\Purifier::class,
-        'Share' => Jorenvh\Share\ShareFacade::class,
+        'Purifier' => Mews\Purifier\Facades\Purifier::class
     ])->toArray(),
 
 ];

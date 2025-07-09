@@ -4,7 +4,7 @@
 
 namespace Composer\Autoload;
 
-class ComposerStaticInit6611f65c1de81cdbc1d2be168f156d69
+class ComposerStaticInitaf3a8d999314f8d440f6dc14b66864bd
 {
     public static $files = array (
         '6e3fae29631ef280660b3cdad06f25a8' => __DIR__ . '/..' . '/symfony/deprecation-contracts/function.php',
@@ -146,6 +146,20 @@ class ComposerStaticInit6611f65c1de81cdbc1d2be168f156d69
             'Monolog\\' => 8,
             'Mollie\\Laravel\\' => 15,
             'Mollie\\Api\\' => 11,
+            'Modules\\Website\\Tests\\' => 22,
+            'Modules\\Website\\Database\\Seeders\\' => 33,
+            'Modules\\Website\\Database\\Factories\\' => 35,
+            'Modules\\Website\\App\\' => 20,
+            'Modules\\Website\\' => 16,
+            'Modules\\GlobalSetting\\Tests\\' => 28,
+            'Modules\\GlobalSetting\\Database\\Seeders\\' => 39,
+            'Modules\\GlobalSetting\\Database\\Factories\\' => 41,
+            'Modules\\GlobalSetting\\App\\' => 26,
+            'Modules\\GlobalSetting\\' => 22,
+            'Modules\\Accounting\\Tests\\' => 25,
+            'Modules\\Accounting\\Database\\Seeders\\' => 36,
+            'Modules\\Accounting\\Database\\Factories\\' => 38,
+            'Modules\\Accounting\\' => 19,
             'Modules\\' => 8,
             'Mockery\\' => 8,
             'Mews\\Purifier\\' => 14,
@@ -383,8 +397,8 @@ class ComposerStaticInit6611f65c1de81cdbc1d2be168f156d69
         ),
         'Spatie\\LaravelIgnition\\' => 
         array (
-            0 => __DIR__ . '/..' . '/spatie/error-solutions/legacy/laravel-ignition',
-            1 => __DIR__ . '/..' . '/spatie/laravel-ignition/src',
+            0 => __DIR__ . '/..' . '/spatie/laravel-ignition/src',
+            1 => __DIR__ . '/..' . '/spatie/error-solutions/legacy/laravel-ignition',
         ),
         'Spatie\\ImageOptimizer\\' => 
         array (
@@ -392,8 +406,8 @@ class ComposerStaticInit6611f65c1de81cdbc1d2be168f156d69
         ),
         'Spatie\\Ignition\\' => 
         array (
-            0 => __DIR__ . '/..' . '/spatie/error-solutions/legacy/ignition',
-            1 => __DIR__ . '/..' . '/spatie/ignition/src',
+            0 => __DIR__ . '/..' . '/spatie/ignition/src',
+            1 => __DIR__ . '/..' . '/spatie/error-solutions/legacy/ignition',
         ),
         'Spatie\\FlareClient\\' => 
         array (
@@ -495,6 +509,62 @@ class ComposerStaticInit6611f65c1de81cdbc1d2be168f156d69
         'Mollie\\Api\\' => 
         array (
             0 => __DIR__ . '/..' . '/mollie/mollie-api-php/src',
+        ),
+        'Modules\\Website\\Tests\\' => 
+        array (
+            0 => __DIR__ . '/../..' . '/Modules/Website/tests',
+        ),
+        'Modules\\Website\\Database\\Seeders\\' => 
+        array (
+            0 => __DIR__ . '/../..' . '/Modules/Website/database/seeders',
+        ),
+        'Modules\\Website\\Database\\Factories\\' => 
+        array (
+            0 => __DIR__ . '/../..' . '/Modules/Website/database/factories',
+        ),
+        'Modules\\Website\\App\\' => 
+        array (
+            0 => __DIR__ . '/../..' . '/Modules/Website/app',
+        ),
+        'Modules\\Website\\' => 
+        array (
+            0 => __DIR__ . '/../..' . '/Modules/Website',
+        ),
+        'Modules\\GlobalSetting\\Tests\\' => 
+        array (
+            0 => __DIR__ . '/../..' . '/Modules/GlobalSetting/tests',
+        ),
+        'Modules\\GlobalSetting\\Database\\Seeders\\' => 
+        array (
+            0 => __DIR__ . '/../..' . '/Modules/GlobalSetting/database/seeders',
+        ),
+        'Modules\\GlobalSetting\\Database\\Factories\\' => 
+        array (
+            0 => __DIR__ . '/../..' . '/Modules/GlobalSetting/database/factories',
+        ),
+        'Modules\\GlobalSetting\\App\\' => 
+        array (
+            0 => __DIR__ . '/../..' . '/Modules/GlobalSetting/app',
+        ),
+        'Modules\\GlobalSetting\\' => 
+        array (
+            0 => __DIR__ . '/../..' . '/Modules/GlobalSetting',
+        ),
+        'Modules\\Accounting\\Tests\\' => 
+        array (
+            0 => __DIR__ . '/../..' . '/Modules/Accounting/tests',
+        ),
+        'Modules\\Accounting\\Database\\Seeders\\' => 
+        array (
+            0 => __DIR__ . '/../..' . '/Modules/Accounting/database/seeders',
+        ),
+        'Modules\\Accounting\\Database\\Factories\\' => 
+        array (
+            0 => __DIR__ . '/../..' . '/Modules/Accounting/database/factories',
+        ),
+        'Modules\\Accounting\\' => 
+        array (
+            0 => __DIR__ . '/../..' . '/Modules/Accounting/app',
         ),
         'Modules\\' => 
         array (
@@ -3637,6 +3707,7 @@ class ComposerStaticInit6611f65c1de81cdbc1d2be168f156d69
         'Illuminate\\Support\\Facades\\Lang' => __DIR__ . '/..' . '/laravel/framework/src/Illuminate/Support/Facades/Lang.php',
         'Illuminate\\Support\\Facades\\Log' => __DIR__ . '/..' . '/laravel/framework/src/Illuminate/Support/Facades/Log.php',
         'Illuminate\\Support\\Facades\\Mail' => __DIR__ . '/..' . '/laravel/framework/src/Illuminate/Support/Facades/Mail.php',
+        'Illuminate\\Support\\Facades\\MaintenanceMode' => __DIR__ . '/..' . '/laravel/framework/src/Illuminate/Support/Facades/MaintenanceMode.php',
         'Illuminate\\Support\\Facades\\Notification' => __DIR__ . '/..' . '/laravel/framework/src/Illuminate/Support/Facades/Notification.php',
         'Illuminate\\Support\\Facades\\ParallelTesting' => __DIR__ . '/..' . '/laravel/framework/src/Illuminate/Support/Facades/ParallelTesting.php',
         'Illuminate\\Support\\Facades\\Password' => __DIR__ . '/..' . '/laravel/framework/src/Illuminate/Support/Facades/Password.php',
@@ -3798,6 +3869,7 @@ class ComposerStaticInit6611f65c1de81cdbc1d2be168f156d69
         'Illuminate\\View\\Compilers\\Concerns\\CompilesComments' => __DIR__ . '/..' . '/laravel/framework/src/Illuminate/View/Compilers/Concerns/CompilesComments.php',
         'Illuminate\\View\\Compilers\\Concerns\\CompilesComponents' => __DIR__ . '/..' . '/laravel/framework/src/Illuminate/View/Compilers/Concerns/CompilesComponents.php',
         'Illuminate\\View\\Compilers\\Concerns\\CompilesConditionals' => __DIR__ . '/..' . '/laravel/framework/src/Illuminate/View/Compilers/Concerns/CompilesConditionals.php',
+        'Illuminate\\View\\Compilers\\Concerns\\CompilesContexts' => __DIR__ . '/..' . '/laravel/framework/src/Illuminate/View/Compilers/Concerns/CompilesContexts.php',
         'Illuminate\\View\\Compilers\\Concerns\\CompilesEchos' => __DIR__ . '/..' . '/laravel/framework/src/Illuminate/View/Compilers/Concerns/CompilesEchos.php',
         'Illuminate\\View\\Compilers\\Concerns\\CompilesErrors' => __DIR__ . '/..' . '/laravel/framework/src/Illuminate/View/Compilers/Concerns/CompilesErrors.php',
         'Illuminate\\View\\Compilers\\Concerns\\CompilesFragments' => __DIR__ . '/..' . '/laravel/framework/src/Illuminate/View/Compilers/Concerns/CompilesFragments.php',
@@ -4913,6 +4985,26 @@ class ComposerStaticInit6611f65c1de81cdbc1d2be168f156d69
         'Mockery\\Undefined' => __DIR__ . '/..' . '/mockery/mockery/library/Mockery/Undefined.php',
         'Mockery\\VerificationDirector' => __DIR__ . '/..' . '/mockery/mockery/library/Mockery/VerificationDirector.php',
         'Mockery\\VerificationExpectation' => __DIR__ . '/..' . '/mockery/mockery/library/Mockery/VerificationExpectation.php',
+        'Modules\\Accounting\\Providers\\AccountingServiceProvider' => __DIR__ . '/../..' . '/Modules/Accounting/app/Providers/AccountingServiceProvider.php',
+        'Modules\\Accounting\\Providers\\EventServiceProvider' => __DIR__ . '/../..' . '/Modules/Accounting/app/Providers/EventServiceProvider.php',
+        'Modules\\Accounting\\Providers\\RouteServiceProvider' => __DIR__ . '/../..' . '/Modules/Accounting/app/Providers/RouteServiceProvider.php',
+        'Modules\\Accounting\\app\\Http\\Controllers\\AccountingController' => __DIR__ . '/../..' . '/Modules/Accounting/app/Http/Controllers/AccountingController.php',
+        'Modules\\Accounting\\database\\seeders\\AccountingDatabaseSeeder' => __DIR__ . '/../..' . '/Modules/Accounting/database/seeders/AccountingDatabaseSeeder.php',
+        'Modules\\GlobalSetting\\app\\Enums\\WebsiteSettingEnum' => __DIR__ . '/../..' . '/Modules/GlobalSetting/app/Enums/WebsiteSettingEnum.php',
+        'Modules\\GlobalSetting\\app\\Http\\Controllers\\EmailSettingController' => __DIR__ . '/../..' . '/Modules/GlobalSetting/app/Http/Controllers/EmailSettingController.php',
+        'Modules\\GlobalSetting\\app\\Http\\Controllers\\GlobalSettingController' => __DIR__ . '/../..' . '/Modules/GlobalSetting/app/Http/Controllers/GlobalSettingController.php',
+        'Modules\\GlobalSetting\\app\\Models\\CustomCode' => __DIR__ . '/../..' . '/Modules/GlobalSetting/app/Models/CustomCode.php',
+        'Modules\\GlobalSetting\\app\\Models\\CustomPagination' => __DIR__ . '/../..' . '/Modules/GlobalSetting/app/Models/CustomPagination.php',
+        'Modules\\GlobalSetting\\app\\Models\\EmailTemplate' => __DIR__ . '/../..' . '/Modules/GlobalSetting/app/Models/EmailTemplate.php',
+        'Modules\\GlobalSetting\\app\\Models\\SeoSetting' => __DIR__ . '/../..' . '/Modules/GlobalSetting/app/Models/SeoSetting.php',
+        'Modules\\GlobalSetting\\app\\Models\\Setting' => __DIR__ . '/../..' . '/Modules/GlobalSetting/app/Models/Setting.php',
+        'Modules\\GlobalSetting\\app\\Providers\\GlobalSettingServiceProvider' => __DIR__ . '/../..' . '/Modules/GlobalSetting/app/Providers/GlobalSettingServiceProvider.php',
+        'Modules\\GlobalSetting\\app\\Providers\\RouteServiceProvider' => __DIR__ . '/../..' . '/Modules/GlobalSetting/app/Providers/RouteServiceProvider.php',
+        'Modules\\GlobalSetting\\app\\Traits\\ArchiveHelperTrait' => __DIR__ . '/../..' . '/Modules/GlobalSetting/app/Traits/ArchiveHelperTrait.php',
+        'Modules\\GlobalSetting\\database\\seeders\\CustomPaginationSeeder' => __DIR__ . '/../..' . '/Modules/GlobalSetting/database/seeders/CustomPaginationSeeder.php',
+        'Modules\\GlobalSetting\\database\\seeders\\EmailTemplateSeeder' => __DIR__ . '/../..' . '/Modules/GlobalSetting/database/seeders/EmailTemplateSeeder.php',
+        'Modules\\GlobalSetting\\database\\seeders\\GlobalSettingInfoSeeder' => __DIR__ . '/../..' . '/Modules/GlobalSetting/database/seeders/GlobalSettingInfoSeeder.php',
+        'Modules\\GlobalSetting\\database\\seeders\\SeoInfoSeeder' => __DIR__ . '/../..' . '/Modules/GlobalSetting/database/seeders/SeoInfoSeeder.php',
         'Modules\\Website\\app\\Http\\Controllers\\BlogController' => __DIR__ . '/../..' . '/Modules/Website/app/Http/Controllers/BlogController.php',
         'Modules\\Website\\app\\Http\\Controllers\\CheckoutController' => __DIR__ . '/../..' . '/Modules/Website/app/Http/Controllers/CheckoutController.php',
         'Modules\\Website\\app\\Http\\Controllers\\User\\PropertyController' => __DIR__ . '/../..' . '/Modules/Website/app/Http/Controllers/User/PropertyController.php',
@@ -9071,10 +9163,10 @@ class ComposerStaticInit6611f65c1de81cdbc1d2be168f156d69
     public static function getInitializer(ClassLoader $loader)
     {
         return \Closure::bind(function () use ($loader) {
-            $loader->prefixLengthsPsr4 = ComposerStaticInit6611f65c1de81cdbc1d2be168f156d69::$prefixLengthsPsr4;
-            $loader->prefixDirsPsr4 = ComposerStaticInit6611f65c1de81cdbc1d2be168f156d69::$prefixDirsPsr4;
-            $loader->prefixesPsr0 = ComposerStaticInit6611f65c1de81cdbc1d2be168f156d69::$prefixesPsr0;
-            $loader->classMap = ComposerStaticInit6611f65c1de81cdbc1d2be168f156d69::$classMap;
+            $loader->prefixLengthsPsr4 = ComposerStaticInitaf3a8d999314f8d440f6dc14b66864bd::$prefixLengthsPsr4;
+            $loader->prefixDirsPsr4 = ComposerStaticInitaf3a8d999314f8d440f6dc14b66864bd::$prefixDirsPsr4;
+            $loader->prefixesPsr0 = ComposerStaticInitaf3a8d999314f8d440f6dc14b66864bd::$prefixesPsr0;
+            $loader->classMap = ComposerStaticInitaf3a8d999314f8d440f6dc14b66864bd::$classMap;
 
         }, null, ClassLoader::class);
     }

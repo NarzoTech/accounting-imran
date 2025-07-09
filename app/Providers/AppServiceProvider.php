@@ -27,18 +27,22 @@ class AppServiceProvider extends ServiceProvider
     public function boot(CacheService $cacheService): void
     {
         try {
-            $cacheService->setCache();
+            // check if table exists
+            if (\Schema::hasTable('settings')) {
 
-            $setting = $cacheService->getSetting();
+                $cacheService->setCache();
 
-            $this->mailSetting($setting);
+                $setting = $cacheService->getSetting();
 
-            $this->setupPusherConfiguration($setting);
-            $this->setupTimezone($setting);
-            $cacheService->setTheme($setting);
-            // if (env('APP_ENV') !== 'local') {
-            //     URL::forceScheme('https');
-            // }
+                $this->mailSetting($setting);
+
+                $this->setupPusherConfiguration($setting);
+                $this->setupTimezone($setting);
+                $cacheService->setTheme($setting);
+                // if (env('APP_ENV') !== 'local') {
+                //     URL::forceScheme('https');
+                // }
+            }
         } catch (Exception $ex) {
             $setting = null;
             Log::error($ex->getMessage());

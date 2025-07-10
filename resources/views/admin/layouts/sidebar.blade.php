@@ -25,25 +25,20 @@
             </a>
         </li>
 
-        @if (checkAdminHasPermission('setting.view') ||
-                checkAdminHasPermission('basic.payment.view') ||
-                checkAdminHasPermission('payment.view') ||
-                checkAdminHasPermission('currency.view') ||
-                checkAdminHasPermission('tax.view') ||
-                checkAdminHasPermission('language.view') ||
-                checkAdminHasPermission('role.view') ||
-                checkAdminHasPermission('admin.view'))
-            <li class="menu-header">{{ __('Settings') }}</li>
+        @if (Module::isEnabled('Accounting'))
+            @include('accounting::sidebar')
+        @endif
 
-            @if (Module::isEnabled('GlobalSetting'))
-                <li
-                    class="menu-item {{ isRoute(['admin.settings', 'admin.general-setting', 'admin.credential-setting', 'admin.email-settings', 'admin.seo-setting', 'admin.currency*', 'admin.payment', 'admin.system-update*', 'admin.languages*', 'admin.admin*', 'admin.role*', 'admin.cache-clear', 'admin.system.cleanup', 'admin.cron-jobs', 'admin.blog.settings'], 'active') }}">
-                    <a class="menu-link" href="{{ route('admin.settings') }}">
-                        <i class='menu-icon tf-icons bx bx-cog'></i>
-                        <div class="text-truncate" data-i18n="Settings">{{ __('Settings') }}</div>
-                    </a>
-                </li>
-            @endif
+        <li class="menu-header">{{ __('Settings') }}</li>
+
+        @if (Module::isEnabled('GlobalSetting'))
+            <li
+                class="menu-item {{ isRoute(['admin.settings', 'admin.general-setting', 'admin.credential-setting', 'admin.email-settings', 'admin.seo-setting', 'admin.currency*', 'admin.payment', 'admin.system-update*', 'admin.languages*', 'admin.admin*', 'admin.role*', 'admin.cache-clear', 'admin.system.cleanup', 'admin.cron-jobs', 'admin.blog.settings'], 'active') }}">
+                <a class="menu-link" href="{{ route('admin.settings') }}">
+                    <i class='menu-icon tf-icons bx bx-cog'></i>
+                    <div class="text-truncate" data-i18n="Settings">{{ __('Settings') }}</div>
+                </a>
+            </li>
         @endif
 
         <li class="mb-5"></li>

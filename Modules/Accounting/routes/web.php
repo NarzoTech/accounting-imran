@@ -2,13 +2,15 @@
 
 use Illuminate\Support\Facades\Route;
 use Modules\Accounting\app\Http\Controllers\AccountingController;
+use Modules\Accounting\Http\Controllers\CategoryController;
 
 Route::group(['as' => 'admin.', 'prefix' => 'admin', 'middleware' => ['auth:admin', 'translation']], function () {
     Route::resource('invoice', AccountingController::class)->names('invoice');
     Route::resource('customer', AccountingController::class)->names('customer');
     Route::resource('container', AccountingController::class)->names('container');
     Route::resource('product', AccountingController::class)->names('product');
-    Route::resource('category', AccountingController::class)->names('category');
+    Route::resource('category', CategoryController::class)->names('category');
+    Route::put('category/status-update/{id}', [CategoryController::class, 'statusUpdate'])->name('category.status.update');
 
     Route::resource('income', AccountingController::class)->names('income');
     Route::resource('transfer', AccountingController::class)->names('transfer');

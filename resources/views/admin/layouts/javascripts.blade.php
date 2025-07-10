@@ -33,6 +33,9 @@
 <script src="{{ asset('backend/js/clipboard.min.js') }}"></script>
 <script src="{{ asset('backend/js/custom.js') }}"></script>
 
+<script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap5.min.js"></script>
+
 <script>
     @session('message')
     var type = "{{ Session::get('alert-type', 'info') }}"

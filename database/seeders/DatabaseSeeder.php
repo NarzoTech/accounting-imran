@@ -5,7 +5,7 @@ namespace Database\Seeders;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Cache;
-
+use Modules\GlobalSetting\database\seeders\GlobalSettingInfoSeeder;
 
 class DatabaseSeeder extends Seeder
 {
@@ -19,7 +19,7 @@ class DatabaseSeeder extends Seeder
 
             RolePermissionSeeder::class,
             AdminInfoSeeder::class,
-
+            GlobalSettingInfoSeeder::class,
 
 
         ]);

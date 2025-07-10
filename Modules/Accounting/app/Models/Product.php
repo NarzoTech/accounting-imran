@@ -4,7 +4,6 @@ namespace Modules\Accounting\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-// use Modules\Accounting\Database\Factories\ProductFactory;
 
 class Product extends Model
 {
@@ -13,10 +12,16 @@ class Product extends Model
     /**
      * The attributes that are mass assignable.
      */
-    protected $fillable = [];
-
-    // protected static function newFactory(): ProductFactory
-    // {
-    //     // return ProductFactory::new();
-    // }
+    protected $fillable = [
+        'name',
+        'product_code',
+        'unit',
+        'cost_price',
+        'sell_price',
+        'category_id',
+        'sub_category_id',
+        'description',
+        'image',
+        'status',
+    ];
 }

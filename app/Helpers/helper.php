@@ -48,6 +48,16 @@ function file_upload(UploadedFile $file, string $path = 'uploads/custom-images/'
 
     return $file_name;
 }
+
+
+if (!function_exists('file_delete')) {
+    function file_delete($file)
+    {
+        if ($file && File::exists(public_path($file))) {
+            unlink(public_path($file));
+        }
+    }
+}
 if (!function_exists('checkPaginate')) {
     function checkPaginate($list)
     {

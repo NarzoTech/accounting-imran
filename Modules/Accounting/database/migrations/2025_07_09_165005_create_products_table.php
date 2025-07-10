@@ -16,13 +16,14 @@ return new class extends Migration
             $table->string('name');
             $table->string('image')->nullable();
             $table->text('description')->nullable();
-            $table->string('product_code')->unique();
+            $table->string('product_code')->unique()->nullable();
             $table->string('unit')->default('PCS');
             $table->decimal('cost_price', 15, 2)->default(0);
             $table->decimal('sell_price', 15, 2)->default(0);
             $table->unsignedBigInteger('category_id')->nullable();
             $table->unsignedBigInteger('sub_category_id')->nullable();
 
+            $table->boolean('status')->default(1);
             $table->foreign('category_id')->references('id')->on('categories')->onDelete('set null');
             $table->foreign('sub_category_id')->references('id')->on('categories')->onDelete('set null');
             $table->timestamps();

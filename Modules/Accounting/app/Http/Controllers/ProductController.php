@@ -6,14 +6,61 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Modules\Accounting\Models\Category;
 use Modules\Accounting\Models\Product;
+use Yajra\DataTables\Facades\DataTables;
 
 class ProductController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
+        if ($request->ajax()) {
+            $products = Product::with('category');
+
+            return DataTables::of($products)
+                ->addIndexColumn()
+                ->addColumn('product', function ($row) {
+                    $image = $row->image
+                        ? asset('storage/' . $row->image)
+                        : 'https://via.placeholder.com/200x200?text=No+Image';
+
+                    return '
+                        <div class="d-flex align-items-center gap-3">
+                            <img src="' . $image . '" class="rounded-circle" width="50" height="50" alt="Product Image">
+                            <div>
+                                <strong>' . $row->name . '</strong><br>
+                                SKU: ' . $row->product_code . '
+                            </div>
+                        </div>
+                    ';
+                })
+                ->addColumn('price', function ($row) {
+                    return 'BDT ' . number_format($row->sell_price, 2);
+                })
+                ->addColumn('category', function ($row) {
+                    return $row->category->name ?? 'Uncategorized';
+                })
+                ->addColumn('status', function ($row) {
+                    // Determine button class and text based on status
+                    $buttonClass = $row->status == 1 ? 'btn-success' : 'btn-warning';
+                    $buttonText = $row->status == 1 ? 'Active' : 'Inactive';
+                    return '<input type="checkbox" onchange="changeStatus(' . $row->id . ')" class="toggle-status-btn" data-id="' . $row->id . '" data-toggle="toggle" ' . ($row->status ? 'checked' : '') . '>';
+                })
+                ->addColumn('action', function ($row) {
+                    $editUrl = route('admin.product.edit', $row->id);
+                    $showUrl = route('admin.product.show', $row->id);
+                    $deleteUrl = route('admin.product.destroy', $row->id);
+
+                    return '
+                        <a href="' . $showUrl . '" class="btn btn-info btn-sm"><i class="fas fa-eye"></i></a>
+                        <a href="' . $editUrl . '" class="btn btn-primary btn-sm"><i class="fas fa-edit"></i></a>
+                        <button class="btn btn-danger btn-sm delete-product" data-id="' . $row->id . '"><i class="fas fa-trash"></i></button>
+                    ';
+                })
+                ->rawColumns(['product', 'status', 'action'])
+                ->make(true);
+        }
         return view('accounting::products.index');
     }
 
@@ -66,6 +113,16 @@ class ProductController extends Controller
         }
         return redirect($route)->with($notification);
     }
+
+    public function statusUpdate($id)
+    {
+        $product = Product::findOrFail($id);
+        $product->status = !$product->status;
+        $product->save();
+
+        return response()->json(['success' => true, 'message' => 'Status updated successfully.']);
+    }
+
 
     /**
      * Show the specified resource.

@@ -24,7 +24,6 @@ class CategoryController extends Controller
                     // Determine button class and text based on status
                     $buttonClass = $row->status == 1 ? 'btn-success' : 'btn-warning';
                     $buttonText = $row->status == 1 ? 'Active' : 'Inactive';
-                    // Add a data-status attribute to easily get current status in JS
                     return '<input type="checkbox" onchange="changeStatus(' . $row->id . ')" class="toggle-status-btn" data-id="' . $row->id . '" data-toggle="toggle" ' . ($row->status ? 'checked' : '') . '>';
                 })
                 ->addColumn('actions', function ($row) {

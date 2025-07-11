@@ -13,7 +13,7 @@
             </div>
             <div class="card-body">
                 <div class="table-responsive list_table">
-                    <table class="table">
+                    <table class="table" id="product_table">
                         <thead>
                             <tr>
                                 <th width="5%">{{ __('SN') }}</th>
@@ -72,5 +72,74 @@
                 }
             });
         }
+
+        $(function() {
+            $('#product_table').DataTable({
+                processing: true,
+                serverSide: true,
+                ajax: '{{ route('admin.product.index') }}',
+                dom: 'Bfrtip',
+                buttons: [{
+                        extend: 'excelHtml5',
+                        title: 'Product List',
+                        exportOptions: {
+                            columns: [0, 1, 2, 3, 4]
+                        }
+                    },
+                    {
+                        extend: 'pdfHtml5',
+                        title: 'Product List',
+                        orientation: 'portrait',
+                        pageSize: 'A4',
+                        exportOptions: {
+                            columns: [0, 1, 2, 3, 4]
+                        }
+                    }
+                ],
+                columns: [{
+                        data: 'DT_RowIndex',
+                        name: 'DT_RowIndex',
+                        orderable: false,
+                        searchable: false
+                    },
+                    {
+                        data: 'product',
+                        name: 'product',
+                        orderable: false,
+                        searchable: true
+                    },
+                    {
+                        data: 'price',
+                        name: 'price',
+                        searchable: false
+                    },
+                    {
+                        data: 'category',
+                        name: 'category',
+                        searchable: true
+                    },
+                    {
+                        data: 'status',
+                        name: 'status',
+                        orderable: false,
+                        searchable: false
+                    },
+                    {
+                        data: 'action',
+                        name: 'action',
+                        orderable: false,
+                        searchable: false,
+                        className: 'text-center'
+                    },
+                ]
+            });
+
+            $('#product_table').on('draw.dt', function() {
+                $('input[data-toggle="toggle"]').bootstrapToggle({
+                    on: 'Active',
+                    off: 'Inactive'
+                });
+            });
+        });
     </script>
 @endpush

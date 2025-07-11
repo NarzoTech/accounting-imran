@@ -16,12 +16,14 @@
                     <table class="table" id="container_table">
                         <thead>
                             <tr>
-                                <th width="5%">{{ __('SN') }}</th>
-                                <th width="30%">{{ __('Container') }}</th>
-                                <th width="15%">{{ __('Price') }}</th>
-                                <th width="10%">{{ __('Category') }}</th>
-                                <th width="15%">{{ __('Status') }}</th>
-                                <th width="15%">{{ __('Action') }}</th>
+                                <th>{{ __('ID') }}</th>
+                                <th>{{ __('Container Number') }}</th>
+                                <th>{{ __('Type') }}</th>
+                                <th>{{ __('Shipping Line') }}</th>
+                                <th>{{ __('Port of Loading') }}</th>
+                                <th>{{ __('Port of Discharge') }}</th>
+                                <th>{{ __('Status') }}</th>
+                                <th>{{ __('Actions') }}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -72,5 +74,75 @@
                 }
             });
         }
+    </script>
+    <script>
+        $(function() {
+            $('#container_table').DataTable({
+                processing: true,
+                serverSide: true,
+                ajax: '{{ route('admin.container.index') }}',
+                columns: [{
+                        data: 'id',
+                        name: 'id'
+                    },
+                    {
+                        data: 'container_number',
+                        name: 'container_number'
+                    },
+                    {
+                        data: 'container_type',
+                        name: 'container_type'
+                    },
+                    {
+                        data: 'shipping_line',
+                        name: 'shipping_line'
+                    },
+                    {
+                        data: 'port_of_loading',
+                        name: 'port_of_loading'
+                    },
+                    {
+                        data: 'port_of_discharge',
+                        name: 'port_of_discharge'
+                    },
+                    {
+                        data: 'status',
+                        name: 'status'
+                    },
+                    {
+                        data: 'actions',
+                        name: 'actions',
+                        orderable: false,
+                        searchable: false
+                    },
+                ],
+                dom: 'Bfrtip',
+                buttons: [{
+                        extend: 'excelHtml5',
+                        text: 'Export Excel',
+                        className: 'btn btn-success'
+                    },
+                    {
+                        extend: 'pdfHtml5',
+                        text: 'Export PDF',
+                        className: 'btn btn-danger'
+                    },
+                ]
+            });
+
+            // Delete Confirmation
+            $(document).on('click', '.delete-container', function() {
+                if (confirm('Are you sure you want to delete this container?')) {
+                    let url = $(this).data('url');
+                    $.post(url, {
+                        _token: '{{ csrf_token() }}',
+                        _method: 'DELETE'
+                    }, function(response) {
+                        $('#container_table').DataTable().ajax.reload();
+                        alert(response.message);
+                    });
+                }
+            });
+        });
     </script>
 @endpush

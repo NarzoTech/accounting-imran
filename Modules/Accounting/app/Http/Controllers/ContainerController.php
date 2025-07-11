@@ -7,14 +7,40 @@ use Illuminate\Http\Request;
 use Modules\Accounting\Http\Requests\ContainerRequest;
 use Modules\Accounting\Models\Container;
 use Modules\Accounting\Models\Product;
+use Yajra\DataTables\Facades\DataTables;
 
 class ContainerController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
+
+        if ($request->ajax()) {
+            $data = Container::select([
+                'id',
+                'container_number',
+                'container_type',
+                'shipping_line',
+                'port_of_loading',
+                'port_of_discharge',
+                'status',
+            ]);
+
+            return DataTables::of($data)
+                ->addColumn('actions', function ($row) {
+                    $editUrl = route('admin.container.edit', $row->id);
+                    $showUrl = route('admin.container.show', $row->id);
+                    return '
+                        <a href="' . $showUrl . '" class="btn btn-info btn-sm me-1"><i class="fas fa-eye"></i></a>
+                        <a href="' . $editUrl . '" class="btn btn-primary btn-sm me-1"><i class="fas fa-edit"></i></a>
+                        <button onclick="deleteData(' . $row->id . ')" type="button" class="btn btn-danger btn-sm"><i class="fas fa-trash-alt"></i></button>
+                    ';
+                })
+                ->rawColumns(['actions'])
+                ->make(true);
+        }
         return view('accounting::container.index');
     }
 
@@ -71,7 +97,8 @@ class ContainerController extends Controller
      */
     public function show($id)
     {
-        return view('accounting::show');
+        $container = Container::findOrFail($id);
+        return view('accounting::container.show', compact('container'));
     }
 
     /**

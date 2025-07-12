@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('repayments', function (Blueprint $table) {
             $table->id();
             $table->foreignId('investment_id')->constrained()->onDelete('cascade');
+            $table->foreignId('investor_id')->constrained('investors')->onDelete('cascade');
             $table->decimal('amount', 15, 2);
             $table->date('repayment_date');
             $table->text('notes')->nullable();

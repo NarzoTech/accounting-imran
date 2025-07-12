@@ -80,7 +80,11 @@ class InvestorController extends Controller
      */
     public function show($id)
     {
-        return view('accounting::show');
+        $investor = Investor::with(['investments', 'repayments'])->findOrFail($id);
+        $totalInvested = $investor->investments()->sum('amount');
+        $totalRepaid = $investor->repayments()->sum('amount');
+
+        return view('accounting::investor.show', compact('investor', 'totalInvested', 'totalRepaid'));
     }
 
     /**

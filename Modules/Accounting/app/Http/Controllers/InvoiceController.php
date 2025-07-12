@@ -110,7 +110,7 @@ class InvoiceController extends Controller
      */
     public function show($id)
     {
-        return view('accounting::show');
+        return view('accounting::invoice.show');
     }
 
     /**

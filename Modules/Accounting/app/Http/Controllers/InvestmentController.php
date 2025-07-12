@@ -99,7 +99,8 @@ class InvestmentController extends Controller
      */
     public function show($id)
     {
-        return view('accounting::show');
+        $investment = Investment::with(['investor', 'container', 'repayments'])->findOrFail($id);
+        return view('accounting::investment.show', compact('investment'));
     }
 
     /**

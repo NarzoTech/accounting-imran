@@ -36,7 +36,7 @@ class Investment extends Model
         return $this->belongsTo(Container::class);
     }
 
-    public function amount()
+    public function repayments()
     {
         return $this->hasMany(Repayment::class);
     }

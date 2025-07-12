@@ -21,6 +21,10 @@ class Repayment extends Model
         'notes',
     ];
 
+    protected $casts = [
+        'repayment_date' => 'date',
+    ];
+
     public function investment()
     {
         return $this->belongsTo(Investment::class);

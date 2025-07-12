@@ -29,4 +29,20 @@ class Investor extends Model
     {
         return $this->hasMany(Repayment::class);
     }
+
+
+    public function getInvestmentsSumAmountAttribute()
+    {
+        return $this->investments()->sum('amount');
+    }
+
+    public function getTotalRepaidAttribute()
+    {
+        return $this->repayments()->sum('amount');
+    }
+
+    public function getRepaymentsSumAmountAttribute()
+    {
+        return $this->repayments()->sum('amount');
+    }
 }

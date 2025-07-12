@@ -13,10 +13,21 @@ class Repayment extends Model
     /**
      * The attributes that are mass assignable.
      */
-    protected $fillable = [];
+    protected $fillable = [
+        'investment_id',
+        'investor_id',
+        'amount',
+        'repayment_date',
+        'notes',
+    ];
 
-    // protected static function newFactory(): RepaymentFactory
-    // {
-    //     // return RepaymentFactory::new();
-    // }
+    public function investment()
+    {
+        return $this->belongsTo(Investment::class);
+    }
+
+    public function investor()
+    {
+        return $this->belongsTo(Investor::class);
+    }
 }

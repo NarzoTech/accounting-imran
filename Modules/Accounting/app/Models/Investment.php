@@ -1,0 +1,24 @@
+<?php
+
+namespace Modules\Accounting\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+
+class Investment extends Model
+{
+    use HasFactory;
+
+    /**
+     * The attributes that are mass assignable.
+     */
+    protected $fillable = [
+        'investor_id',
+        'container_id',
+        'amount',
+        'investment_date',
+        'expected_profit',
+        'total_repaid',
+        'remarks',
+    ];
+}

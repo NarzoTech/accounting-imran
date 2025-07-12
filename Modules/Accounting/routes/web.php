@@ -7,11 +7,12 @@ use Modules\Accounting\Http\Controllers\ContainerController;
 use Modules\Accounting\Http\Controllers\CustomerController;
 use Modules\Accounting\Http\Controllers\InvestmentController;
 use Modules\Accounting\Http\Controllers\InvestorController;
+use Modules\Accounting\Http\Controllers\InvoiceController;
 use Modules\Accounting\Http\Controllers\ProductController;
 use Modules\Accounting\Http\Controllers\RepaymentController;
 
 Route::group(['as' => 'admin.', 'prefix' => 'admin', 'middleware' => ['auth:admin', 'translation']], function () {
-    Route::resource('invoice', AccountingController::class)->names('invoice');
+    Route::resource('invoice', InvoiceController::class)->names('invoice');
     Route::resource('customer', CustomerController::class)->names('customer');
     Route::put('customer/status-update/{id}', [CustomerController::class, 'statusUpdate'])->name('customer.status.update');
     Route::resource('container', ContainerController::class)->names('container');

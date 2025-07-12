@@ -21,4 +21,23 @@ class Investment extends Model
         'total_repaid',
         'remarks',
     ];
+    protected $casts = [
+        'investment_date' => 'date',
+    ];
+
+
+    public function investor()
+    {
+        return $this->belongsTo(Investor::class);
+    }
+
+    public function container()
+    {
+        return $this->belongsTo(Container::class);
+    }
+
+    public function amount()
+    {
+        return $this->hasMany(Repayment::class);
+    }
 }

@@ -1,6 +1,6 @@
 @extends('admin.layouts.master')
 @section('title')
-    <title>{{ __('Create Container') }}</title>
+    <title>{{ __('Create Customer') }}</title>
 @endsection
 @section('admin-content')
     <form action="{{ route('admin.customer.store') }}" method="post" id="create_form" enctype="multipart/form-data">

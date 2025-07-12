@@ -7,17 +7,17 @@
     </a>
 
     <ul class="menu-sub">
-        <li class="menu-item {{ isRoute('admin.invoice.*', 'active') }}">
+        <li class="menu-item {{ isRoute(['admin.invoice.*'], 'active') }}">
             <a class="menu-link" href="{{ route('admin.invoice.index') }}">
                 {{ __('Invoice') }}
             </a>
         </li>
-        <li class="menu-item {{ isRoute('admin.customer.*', 'active') }}">
+        <li class="menu-item {{ isRoute(['admin.customer.*'], 'active') }}">
             <a class="menu-link" href="{{ route('admin.customer.index') }}">
                 {{ __('Customer') }}
             </a>
         </li>
-        <li class="menu-item {{ isRoute('admin.container.*', 'active') }}">
+        <li class="menu-item {{ isRoute(['admin.container.*'], 'active') }}">
             <a class="menu-link" href="{{ route('admin.container.index') }}">
                 {{ __('Container') }}
             </a>
@@ -35,12 +35,12 @@
     </a>
 
     <ul class="menu-sub">
-        <li class="menu-item {{ isRoute('admin.product.*', 'active') }}">
+        <li class="menu-item {{ isRoute(['admin.product.*'], 'active') }}">
             <a class="menu-link" href="{{ route('admin.product.index') }}">
                 {{ __('Product') }}
             </a>
         </li>
-        <li class="menu-item {{ isRoute('admin.category.*', 'active') }}">
+        <li class="menu-item {{ isRoute(['admin.category.*'], 'active') }}">
             <a class="menu-link" href="{{ route('admin.category.index') }}">
                 {{ __('Category') }}
             </a>
@@ -49,7 +49,7 @@
 </li>
 
 <li
-    class="menu-item {{ isRoute(['admin.income.*', 'admin.transfer.*', 'admin.expense.*', 'admin.investor.*'], 'active open') }}">
+    class="menu-item {{ isRoute(['admin.income.*', 'admin.transfer.*', 'admin.expense.*', 'admin.investor.*', 'admin.investment.*', 'admin.repayment.*'], 'active open') }}">
 
 
     <a href="javascript:void(0);" class="menu-link menu-toggle">
@@ -58,24 +58,36 @@
     </a>
 
     <ul class="menu-sub">
-        <li class="menu-item {{ isRoute('admin.income.*', 'active') }}">
+        <li class="menu-item {{ isRoute(['admin.income.*'], 'active') }}">
             <a class="menu-link" href="{{ route('admin.income.index') }}">
                 {{ __('Income') }}
             </a>
         </li>
-        <li class="menu-item {{ isRoute('admin.transfer.*', 'active') }}">
+        <li class="menu-item {{ isRoute(['admin.transfer.*'], 'active') }}">
             <a class="menu-link" href="{{ route('admin.transfer.index') }}">
                 {{ __('Transfer') }}
             </a>
         </li>
 
-        <li class="menu-item {{ isRoute('admin.expense.*', 'active') }}">
+        <li class="menu-item {{ isRoute(['admin.expense.*'], 'active') }}">
             <a class="menu-link" href="{{ route('admin.expense.index') }}">
                 {{ __('Expenses') }}
             </a>
         </li>
 
-        <li class="menu-item {{ isRoute('admin.investor.*', 'active') }}">
+        <li class="menu-item {{ isRoute(['admin.expense.*'], 'active') }}">
+            <a class="menu-link" href="{{ route('admin.expense.index') }}">
+                {{ __('Expenses') }}
+            </a>
+        </li>
+
+        <li class="menu-item {{ isRoute(['admin.investment.*'], 'active') }}">
+            <a class="menu-link" href="{{ route('admin.investment.index') }}">
+                {{ __('Investment') }}
+            </a>
+        </li>
+
+        <li class="menu-item {{ isRoute(['admin.investor.*'], 'active') }}">
             <a class="menu-link" href="{{ route('admin.investor.index') }}">
                 {{ __('Investor') }}
             </a>

@@ -125,5 +125,21 @@ class RepaymentController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy($id) {}
+    public function destroy($id)
+    {
+        $repayment = Repayment::findOrFail($id);
+        $repayment->delete();
+
+        $notification = __('Deleted Successfully');
+        $notification = ['message' => $notification, 'alert-type' => 'success'];
+
+        if (request()->button == 'save') {
+            $route = route('admin.repayment.index');
+        } else if (request()->button == 'save_exit') {
+            $route = route('admin.investor.index');
+        } else {
+            $route = route('admin.repayment.index');
+        }
+        return redirect($route)->with($notification);
+    }
 }

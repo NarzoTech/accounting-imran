@@ -6,6 +6,7 @@ use Modules\Accounting\Http\Controllers\AccountController;
 use Modules\Accounting\Http\Controllers\CategoryController;
 use Modules\Accounting\Http\Controllers\ContainerController;
 use Modules\Accounting\Http\Controllers\CustomerController;
+use Modules\Accounting\Http\Controllers\ExpenseController;
 use Modules\Accounting\Http\Controllers\IncomeController;
 use Modules\Accounting\Http\Controllers\InvestmentController;
 use Modules\Accounting\Http\Controllers\InvestorController;
@@ -27,7 +28,7 @@ Route::group(['as' => 'admin.', 'prefix' => 'admin', 'middleware' => ['auth:admi
 
     Route::resource('income', IncomeController::class)->names('income');
     Route::resource('transfer', AccountingController::class)->names('transfer');
-    Route::resource('expense', AccountingController::class)->names('expense');
+    Route::resource('expense', ExpenseController::class)->names('expense');
     Route::resource('investor', InvestorController::class)->names('investor');
     Route::resource('repayment', RepaymentController::class)->names('repayment');
     Route::resource('investment', InvestmentController::class)->names('investment');

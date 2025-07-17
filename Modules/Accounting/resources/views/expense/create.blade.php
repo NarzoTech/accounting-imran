@@ -4,7 +4,7 @@
 @endsection
 @section('admin-content')
     <form action="{{ isset($expense) ? route('admin.expense.update', $expense->id) : route('admin.expense.store') }}"
-        method="post" id="expense_form" enctype="multipart/form-data">
+        method="post" id="create_form" enctype="multipart/form-data">
         @csrf
         @if (isset($expense))
             @method('PUT')

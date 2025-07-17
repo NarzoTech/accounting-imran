@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use Modules\Accounting\app\Http\Controllers\AccountingController;
 use Modules\Accounting\Http\Controllers\AccountController;
+use Modules\Accounting\Http\Controllers\AccountTransferController;
 use Modules\Accounting\Http\Controllers\CategoryController;
 use Modules\Accounting\Http\Controllers\ContainerController;
 use Modules\Accounting\Http\Controllers\CustomerController;
@@ -27,7 +28,7 @@ Route::group(['as' => 'admin.', 'prefix' => 'admin', 'middleware' => ['auth:admi
     Route::put('category/status-update/{id}', [CategoryController::class, 'statusUpdate'])->name('category.status.update');
 
     Route::resource('income', IncomeController::class)->names('income');
-    Route::resource('transfer', AccountingController::class)->names('transfer');
+    Route::resource('transfer', AccountTransferController::class)->names('transfer');
     Route::resource('expense', ExpenseController::class)->names('expense');
     Route::resource('investor', InvestorController::class)->names('investor');
     Route::resource('repayment', RepaymentController::class)->names('repayment');

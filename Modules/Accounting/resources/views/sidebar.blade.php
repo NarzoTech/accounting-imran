@@ -68,23 +68,19 @@
                 {{ __('Income') }}
             </a>
         </li>
+
+        <li class="menu-item {{ isRoute(['admin.expense.*'], 'active') }}">
+            <a class="menu-link" href="{{ route('admin.expense.index') }}">
+                {{ __('Expenses') }}
+            </a>
+        </li>
+
         <li class="menu-item {{ isRoute(['admin.transfer.*'], 'active') }}">
             <a class="menu-link" href="{{ route('admin.transfer.index') }}">
                 {{ __('Transfer') }}
             </a>
         </li>
 
-        <li class="menu-item {{ isRoute(['admin.expense.*'], 'active') }}">
-            <a class="menu-link" href="{{ route('admin.expense.index') }}">
-                {{ __('Expenses') }}
-            </a>
-        </li>
-
-        <li class="menu-item {{ isRoute(['admin.expense.*'], 'active') }}">
-            <a class="menu-link" href="{{ route('admin.expense.index') }}">
-                {{ __('Expenses') }}
-            </a>
-        </li>
 
         <li class="menu-item {{ isRoute(['admin.investment.*'], 'active') }}">
             <a class="menu-link" href="{{ route('admin.investment.index') }}">

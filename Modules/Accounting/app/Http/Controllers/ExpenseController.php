@@ -168,7 +168,7 @@ class ExpenseController extends Controller
             $validatedData['attachment'] = file_upload($request->file('attachment'), 'uploads/files/', prefix: 'attachment');
         }
 
-        DB::transaction(function () use ($request, $id) {
+        DB::transaction(function () use ($request, $id, $validatedData) {
             $expense = Expense::findOrFail($id);
 
             // Revert previous amount
@@ -177,7 +177,7 @@ class ExpenseController extends Controller
             $oldAccount->save();
 
             // Update expense
-            $expense->update($request->all());
+            $expense->update($validatedData);
 
             // Deduct new amount
             $newAccount = Account::find($expense->account_id);
@@ -199,6 +199,21 @@ class ExpenseController extends Controller
                 ]);
             }
         });
+
+
+
+        $notification = __('Updated Successfully');
+        $notification = ['message' => $notification, 'alert-type' => 'success'];
+
+
+        if ($request->button == 'save') {
+            $route = route('admin.expense.edit', ['expense' => $expense->id]);
+        } else if ($request->button == 'save_exit') {
+            $route = route('admin.expense.index');
+        } else {
+            $route = route('admin.expense.edit', ['expense' => $expense->id]);
+        }
+        return redirect($route)->with($notification);
     }
 
     /**

@@ -198,6 +198,16 @@ class IncomeController extends Controller
 
         $notification = __('Updated Successfully');
         $notification = ['message' => $notification, 'alert-type' => 'success'];
+
+
+        if ($request->button == 'save') {
+            $route = route('admin.income.edit', ['income' => $income->id]);
+        } else if ($request->button == 'save_exit') {
+            $route = route('admin.income.index');
+        } else {
+            $route = route('admin.income.edit', ['income' => $income->id]);
+        }
+        return redirect($route)->with($notification);
     }
 
     /**

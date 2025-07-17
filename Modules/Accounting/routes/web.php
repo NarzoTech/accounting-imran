@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use Modules\Accounting\app\Http\Controllers\AccountingController;
+use Modules\Accounting\Http\Controllers\AccountController;
 use Modules\Accounting\Http\Controllers\CategoryController;
 use Modules\Accounting\Http\Controllers\ContainerController;
 use Modules\Accounting\Http\Controllers\CustomerController;
@@ -12,6 +13,7 @@ use Modules\Accounting\Http\Controllers\ProductController;
 use Modules\Accounting\Http\Controllers\RepaymentController;
 
 Route::group(['as' => 'admin.', 'prefix' => 'admin', 'middleware' => ['auth:admin', 'translation']], function () {
+    Route::resource('account', AccountController::class)->names('account');
     Route::resource('invoice', InvoiceController::class)->names('invoice');
     Route::resource('customer', CustomerController::class)->names('customer');
     Route::put('customer/status-update/{id}', [CustomerController::class, 'statusUpdate'])->name('customer.status.update');

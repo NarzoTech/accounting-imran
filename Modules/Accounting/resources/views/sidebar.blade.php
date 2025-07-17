@@ -58,6 +58,11 @@
     </a>
 
     <ul class="menu-sub">
+        <li class="menu-item {{ isRoute(['admin.account.*'], 'active') }}">
+            <a class="menu-link" href="{{ route('admin.account.index') }}">
+                {{ __('Accounts') }}
+            </a>
+        </li>
         <li class="menu-item {{ isRoute(['admin.income.*'], 'active') }}">
             <a class="menu-link" href="{{ route('admin.income.index') }}">
                 {{ __('Income') }}

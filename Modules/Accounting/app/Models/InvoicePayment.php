@@ -20,4 +20,28 @@ class InvoicePayment extends Model
         'method',
         'note',
     ];
+
+    /**
+     * Get the invoice that the payment belongs to.
+     */
+    public function invoice()
+    {
+        return $this->belongsTo(Invoice::class);
+    }
+
+    /**
+     * Get the account used for the payment.
+     */
+    public function account()
+    {
+        return $this->belongsTo(Account::class);
+    }
+
+    /**
+     * Get the customer associated with this payment (through the invoice).
+     */
+    public function customer()
+    {
+        return $this->hasOneThrough(Customer::class, Invoice::class);
+    }
 }

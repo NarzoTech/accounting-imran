@@ -12,12 +12,16 @@ use Modules\Accounting\Http\Controllers\IncomeController;
 use Modules\Accounting\Http\Controllers\InvestmentController;
 use Modules\Accounting\Http\Controllers\InvestorController;
 use Modules\Accounting\Http\Controllers\InvoiceController;
+use Modules\Accounting\Http\Controllers\InvoicePaymentController;
 use Modules\Accounting\Http\Controllers\ProductController;
 use Modules\Accounting\Http\Controllers\RepaymentController;
 
 Route::group(['as' => 'admin.', 'prefix' => 'admin', 'middleware' => ['auth:admin', 'translation']], function () {
     Route::resource('account', AccountController::class)->names('account');
     Route::resource('invoice', InvoiceController::class)->names('invoice');
+    Route::resource('invoice_payments', InvoicePaymentController::class);
+    Route::get('invoice_payments/get-data', [InvoicePaymentController::class, 'getInvoicePayments'])->name('invoice_payments.get_data');
+    Route::get('invoice_payments/get-outstanding-invoices', [InvoicePaymentController::class, 'getOutstandingInvoices'])->name('invoice_payments.get_outstanding_invoices');
     Route::resource('customer', CustomerController::class)->names('customer');
     Route::put('customer/status-update/{id}', [CustomerController::class, 'statusUpdate'])->name('customer.status.update');
     Route::resource('container', ContainerController::class)->names('container');

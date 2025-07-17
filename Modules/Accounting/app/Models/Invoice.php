@@ -27,6 +27,9 @@ class Invoice extends Model
         'invoice_footer'
     ];
 
+    protected $appends = ['amount_paid', 'amount_due', 'payment_status'];
+
+
 
     public function customer()
     {
@@ -45,6 +48,37 @@ class Invoice extends Model
 
     public function payments()
     {
-        return $this->hasMany(Payment::class);
+        return $this->hasMany(InvoicePayment::class);
+    }
+
+    /**
+     * Calculate the total amount paid for this invoice.
+     */
+    public function getAmountPaidAttribute()
+    {
+        return $this->payments()->where('payment_type', 'invoice_payment')->sum('amount');
+    }
+
+    /**
+     * Calculate the remaining due amount for this invoice.
+     */
+    public function getAmountDueAttribute()
+    {
+        return $this->total_amount - $this->amount_paid;
+    }
+
+    /**
+     * Get the payment status of the invoice.
+     *
+     * @return string 'Unpaid', 'Partially Paid', 'Paid'
+     */
+    public function getPaymentStatusAttribute()
+    {
+        if ($this->amount_paid >= $this->total_amount) {
+            return 'Paid';
+        } elseif ($this->amount_paid > 0 && $this->amount_paid < $this->total_amount) {
+            return 'Partially Paid';
+        }
+        return 'Unpaid';
     }
 }

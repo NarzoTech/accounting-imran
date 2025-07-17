@@ -22,6 +22,9 @@ return new class extends Migration
             $table->date('estimated_departure')->nullable();
             $table->date('estimated_arrival')->nullable();
             $table->date('actual_arrival')->nullable();
+            $table->string('lc_number')->nullable();
+            $table->string('bank_name')->nullable();
+            $table->string('attachment')->nullable();
 
             $table->enum('status', ['Pending', 'In Transit', 'Arrived', 'Cleared', 'Delivered'])->default('Pending');
             $table->text('remarks')->nullable();

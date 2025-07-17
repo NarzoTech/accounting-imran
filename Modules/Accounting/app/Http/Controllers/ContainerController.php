@@ -49,8 +49,7 @@ class ContainerController extends Controller
      */
     public function create()
     {
-        $products = Product::where('status', 1)->get();
-        return view('accounting::container.create', compact('products'));
+        return view('accounting::container.create');
     }
 
     /**
@@ -58,6 +57,7 @@ class ContainerController extends Controller
      */
     public function store(ContainerRequest $request)
     {
+
 
         $container = Container::create($request->only([
             'container_number',
@@ -69,14 +69,17 @@ class ContainerController extends Controller
             'estimated_arrival',
             'actual_arrival',
             'remarks',
+            'lc_number',
+            'bank_name',
             'status',
         ]));
 
-        foreach ($request->products as $item) {
-            $container->products()->attach($item['product_id'], [
-                'quantity' => $item['quantity'],
-            ]);
+
+        if ($request->hasFile('attachment')) {
+            $container->attachment = file_upload($request->file('attachment'), 'uploads/files/', prefix: 'attachment');
+            $container->save();
         }
+
 
 
         $notification = __('Created Successfully');
@@ -107,8 +110,7 @@ class ContainerController extends Controller
     public function edit($id)
     {
         return view('accounting::container.edit', [
-            'container' => Container::with('products')->findOrFail($id),
-            'products' => Product::where('status', 1)->get(),
+            'container' => Container::findOrFail($id),
         ]);
     }
 
@@ -127,18 +129,21 @@ class ContainerController extends Controller
             'estimated_departure',
             'estimated_arrival',
             'actual_arrival',
+            'lc_number',
+            'bank_name',
             'remarks',
             'status',
         ]));
 
-        // Prepare products data for sync: product_id => [pivot data]
-        $productsData = [];
-        foreach ($request->products as $item) {
-            $productsData[$item['product_id']] = ['quantity' => $item['quantity']];
+        // Handle file upload for attachment
+        if ($request->hasFile('attachment')) {
+            // Delete old attachment if exists
+            if ($container->attachment) {
+                file_delete($container->attachment);
+            }
+            $container->attachment = file_upload($request->file('attachment'), 'uploads/files/', prefix: 'attachment');
+            $container->save(); // Save the updated attachment
         }
-
-        // Sync products with quantities
-        $container->products()->sync($productsData);
 
         $notification = __('Updated Successfully');
         $notification = ['message' => $notification, 'alert-type' => 'success'];

@@ -86,6 +86,20 @@
                                         label="{{ __('Actual Arrival') }}" value="{{ old('actual_arrival') }}" />
                                 </div>
                             </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <x-admin.form-input type="text" id="lc_number" name="lc_number"
+                                        label="{{ __('Lc Number') }}" value="{{ old('lc_number') }}"
+                                        placeholder="Enter Lc Number" />
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <x-admin.form-input type="text" id="bank_name" name="bank_name"
+                                        label="{{ __('Bank Name') }}" value="{{ old('bank_name') }}"
+                                        placeholder="Enter Bank Name" />
+                                </div>
+                            </div>
 
                             <!-- Remarks -->
                             <div class="col-12">
@@ -95,34 +109,6 @@
                                 </div>
                             </div>
                         </div>
-                    </div>
-                </div>
-                <div class="card mt-5">
-                    <div class="card-header d-flex justify-content-between">
-                        <h4 class="section_title">{{ __('Products in Container') }}</h4>
-                    </div>
-
-                    <div class="card-body">
-                        <div id="product_items_wrapper">
-                            <div class="row g-2 product-item align-items-end">
-                                <div class="col-md-8">
-                                    <x-admin.form-select name="products[0][product_id]" label="{{ __('Product') }}"
-                                        class="select2" :required="true">
-                                        <x-admin.select-option value="" text="{{ __('Select Product') }}" />
-                                        @foreach ($products as $product)
-                                            <x-admin.select-option :value="$product->id" :text="$product->name" />
-                                        @endforeach
-                                    </x-admin.form-select>
-                                </div>
-                                <div class="col-md-3">
-                                    <x-admin.form-input type="number" min="1" name="products[0][quantity]"
-                                        label="{{ __('Quantity') }}" value="1" :required="true" />
-                                </div>
-                            </div>
-                        </div>
-                        <button type="button" id="add_product_item" class="btn btn-secondary mt-2">
-                            <i class="fas fa-plus"></i> {{ __('Add Product') }}
-                        </button>
                     </div>
                 </div>
             </div>
@@ -154,46 +140,21 @@
                         </div>
                     </div>
                 </div>
+                <div class="card mt-5">
+                    <div class="card-header d-flex justify-content-between">
+                        <h4 class="section_title">{{ __('Attachment') }}</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="form-group mt-2">
+                                    <input type="file" name="attachment" class="form-control">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </form>
 @endsection
-
-
-@push('js')
-    <script>
-        let productIndex = 1;
-
-        $('#add_product_item').click(function() {
-            let row = `
-            <div class="row g-2 product-item align-items-end mt-2">
-                <div class="col-md-8">
-                    <label class="form-label">Product</label>
-                    <select name="products[${productIndex}][product_id]" class="form-control select2" required>
-                        <option value="">Select Product</option>
-                        @foreach ($products as $product)
-                            <option value="{{ $product->id }}">{{ $product->name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">Quantity</label>
-                    <input type="number" name="products[${productIndex}][quantity]" class="form-control" value="1" min="1" required>
-                </div>
-                <div class="col-md-1">
-                    <button type="button" class="btn btn-danger remove-product-item">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </div>
-            </div>
-        `;
-            $('#product_items_wrapper').append(row);
-            $('.select2').select2();
-            productIndex++;
-        });
-
-        $(document).on('click', '.remove-product-item', function() {
-            $(this).closest('.product-item').remove();
-        });
-    </script>
-@endpush

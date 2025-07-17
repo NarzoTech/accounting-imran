@@ -9,21 +9,9 @@ use Modules\Subscription\app\Models\SubscriptionHistory;
 
 
 Route::get('/', function () {
-    return view('index');
+    return to_route('admin.dashboard');
 })->name('home');
 
-
-Route::get('/dashboard', function () {
-    return redirect()->route('website.user.dashboard');
-})->middleware(['auth:web', 'verified'])->name('dashboard');
-
-Route::get('/invoice/{uuid}/{type?}', function ($uuid, $type = null) {
-    if ($type == 'subscription') {
-        return SubscriptionHistory::where('uuid', $uuid)->firstOrFail();
-    } else {
-        return Order::where('uuid', $uuid)->firstOrFail();
-    }
-})->middleware(['auth:web', 'verified'])->name('user.invoice');
 
 //maintenance mode route
 Route::get('/maintenance-mode', function () {

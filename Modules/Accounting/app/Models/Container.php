@@ -23,10 +23,8 @@ class Container extends Model
         'actual_arrival',
         'remarks',
         'status',
+        'lc_number',
+        'bank_name',
+        'attachment',
     ];
-
-    public function products()
-    {
-        return $this->belongsToMany(Product::class, 'container_products')->withPivot('quantity')->withTimestamps();
-    }
 }

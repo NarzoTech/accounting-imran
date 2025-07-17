@@ -29,9 +29,4 @@ class Product extends Model
     {
         return $this->belongsTo(Category::class);
     }
-
-    public function containers()
-    {
-        return $this->belongsToMany(Container::class, 'container_products')->withPivot('quantity')->withTimestamps();
-    }
 }

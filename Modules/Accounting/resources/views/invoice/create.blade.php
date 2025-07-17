@@ -98,6 +98,7 @@
                                     <th style="width: 35%;">Item</th>
                                     <th style="width: 30%;">Description</th>
                                     <th style="width: 10%;">Qty</th>
+                                    <th style="width: 10%;">Unit</th>
                                     <th style="width: 10%;">Price</th>
                                     <th style="width: 10%;">Amount</th>
                                     <th style="width: 5%;"></th> <!-- For delete button -->
@@ -375,6 +376,7 @@
                             </td>
                         <td><input type="text" class="form-control item-description" value="${item.description ?? ''}" placeholder="Description" name="items[${itemCounter}][description]"></td>
                         <td><input type="number" class="form-control item-qty" value="1" min="1" name="items[${itemCounter}][quantity]"></td>
+                        <td><input type="string" class="form-control item-unit" value="pcs" name="items[${itemCounter}][unit]"></td>
                         <td><input type="number" class="form-control item-price" value="${item.sell_price}" min="0" step="0.01" name="items[${itemCounter}][price]"></td>
                         <td><input type="text" class="form-control item-amount" value="${item.sell_price}" readonly name="items[${itemCounter}][amount]"></td>
                         <td><button type="button" class="btn btn-sm btn-danger delete-item"><i class="fas fa-trash-alt"></i></button></td>

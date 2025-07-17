@@ -6,6 +6,7 @@ use Modules\Accounting\Http\Controllers\AccountController;
 use Modules\Accounting\Http\Controllers\CategoryController;
 use Modules\Accounting\Http\Controllers\ContainerController;
 use Modules\Accounting\Http\Controllers\CustomerController;
+use Modules\Accounting\Http\Controllers\IncomeController;
 use Modules\Accounting\Http\Controllers\InvestmentController;
 use Modules\Accounting\Http\Controllers\InvestorController;
 use Modules\Accounting\Http\Controllers\InvoiceController;
@@ -24,7 +25,7 @@ Route::group(['as' => 'admin.', 'prefix' => 'admin', 'middleware' => ['auth:admi
     Route::resource('category', CategoryController::class)->names('category');
     Route::put('category/status-update/{id}', [CategoryController::class, 'statusUpdate'])->name('category.status.update');
 
-    Route::resource('income', AccountingController::class)->names('income');
+    Route::resource('income', IncomeController::class)->names('income');
     Route::resource('transfer', AccountingController::class)->names('transfer');
     Route::resource('expense', AccountingController::class)->names('expense');
     Route::resource('investor', InvestorController::class)->names('investor');

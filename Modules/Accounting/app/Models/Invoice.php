@@ -2,6 +2,7 @@
 
 namespace Modules\Accounting\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
@@ -80,5 +81,14 @@ class Invoice extends Model
             return 'Partially Paid';
         }
         return 'Unpaid';
+    }
+
+    /**
+     * Check if the invoice is overdue.
+     * An invoice is overdue if its payment_date is in the past AND it's not fully paid.
+     */
+    public function getIsOverdueAttribute()
+    {
+        return $this->payment_date < Carbon::today() && $this->payment_status !== 'Paid';
     }
 }

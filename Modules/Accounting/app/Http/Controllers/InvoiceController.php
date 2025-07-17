@@ -3,21 +3,106 @@
 namespace Modules\Accounting\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Modules\Accounting\Models\Container;
 use Modules\Accounting\Models\Customer;
 use Modules\Accounting\Models\Invoice;
 use Modules\Accounting\Models\Product;
+use Yajra\DataTables\Facades\DataTables;
 
 class InvoiceController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        return view('accounting::invoice.index');
+        if ($request->ajax()) {
+            $query = Invoice::with('customer'); // Eager load customer for display
+
+            // Apply filters based on request
+            if ($request->has('status') && $request->status !== 'all') {
+                $status = $request->status;
+                $query->where(function ($q) use ($status) {
+                    if ($status === 'unpaid') {
+                        $q->has('payments', '=', 0) // No payments
+                            ->orWhereDoesntHave('payments'); // Or no payments linked
+                    } elseif ($status === 'partial') {
+                        // Find invoices where total_amount > sum of payments and sum of payments > 0
+                        $q->whereRaw('invoices.total_amount > (SELECT SUM(amount) FROM invoice_payments WHERE invoice_id = invoices.id AND payment_type = "invoice_payment")')
+                            ->whereRaw('(SELECT SUM(amount) FROM invoice_payments WHERE invoice_id = invoices.id AND payment_type = "invoice_payment") > 0');
+                    } elseif ($status === 'paid') {
+                        // Find invoices where total_amount <= sum of payments
+                        $q->whereRaw('invoices.total_amount <= (SELECT SUM(amount) FROM invoice_payments WHERE invoice_id = invoices.id AND payment_type = "invoice_payment")');
+                    } elseif ($status === 'overdue') {
+                        // Overdue: payment_date is in the past AND not fully paid
+                        $q->where('payment_date', '<', Carbon::today())
+                            ->whereRaw('invoices.total_amount > (SELECT COALESCE(SUM(amount), 0) FROM invoice_payments WHERE invoice_id = invoices.id AND payment_type = "invoice_payment")');
+                    }
+                });
+            }
+
+            if ($request->has('customer_id') && $request->customer_id) {
+                $query->where('customer_id', $request->customer_id);
+            }
+
+            return DataTables::of($query->select('invoices.*')) // Select invoices.* to avoid ambiguity with joined columns
+                ->addIndexColumn()
+                ->addColumn('customer_name', function (Invoice $invoice) {
+                    return $invoice->customer->name ?? 'N/A';
+                })
+                ->editColumn('invoice_date', function (Invoice $invoice) {
+                    return Carbon::parse($invoice->invoice_date)->format('Y-m-d');
+                })
+                ->editColumn('payment_date', function (Invoice $invoice) {
+                    return Carbon::parse($invoice->payment_date)->format('Y-m-d');
+                })
+                ->editColumn('total_amount', function (Invoice $invoice) {
+                    return number_format($invoice->total_amount, 2);
+                })
+                ->addColumn('amount_paid', function (Invoice $invoice) {
+                    return number_format($invoice->amount_paid, 2);
+                })
+                ->addColumn('amount_due', function (Invoice $invoice) {
+                    return number_format($invoice->amount_due, 2);
+                })
+                ->addColumn('payment_status_display', function (Invoice $invoice) {
+                    $status = $invoice->payment_status;
+                    $class = '';
+                    if ($status === 'Paid') {
+                        $class = 'badge bg-success';
+                    } elseif ($status === 'Partially Paid') {
+                        $class = 'badge bg-warning text-dark';
+                    } else {
+                        $class = 'badge bg-danger';
+                    }
+                    if ($invoice->is_overdue && $status !== 'Paid') {
+                        $class .= ' bg-danger'; // Add overdue styling
+                        $status .= ' (Overdue)';
+                    }
+                    return '<span class="' . $class . '">' . $status . '</span>';
+                })
+                ->addColumn('actions', function ($row) {
+                    $editUrl = route('admin.invoice.edit', $row->id);
+                    $detailsUrl = route('admin.invoice.show', $row->id);
+                    $makePaymentUrl = route('admin.invoice_payments.create', ['invoice_id' => $row->id, 'customer_id' => $row->customer_id]);
+                    return '
+                        <div class="btn-group" role="group" aria-label="Invoice Actions">
+                            <a href="' . $detailsUrl . '" class="btn btn-info btn-sm" title="View Details"><i class="fas fa-eye"></i></a>
+                            <a href="' . $editUrl . '" class="btn btn-primary btn-sm" title="Edit Invoice"><i class="fas fa-edit"></i></a>
+                            <button class="btn btn-danger btn-sm delete-invoice" onclick="deleteData(' . $row->id . ')" title="Delete Invoice"><i class="fas fa-trash"></i></button>
+                            <a href="' . $makePaymentUrl . '" class="btn btn-success btn-sm" title="Make Payment"><i class="fas fa-dollar-sign"></i> Pay</a>
+                        </div>
+                    ';
+                })
+                ->rawColumns(['payment_status_display', 'actions'])
+                ->make(true);
+        }
+
+        $customers = Customer::all();
+        return view('accounting::invoice.index', compact('customers'));
     }
 
     /**

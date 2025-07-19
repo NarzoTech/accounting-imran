@@ -24,6 +24,17 @@
                                 </a>
                             </div>
                         </div>
+                        <div class="col-sm-6 col-lg-4">
+                            <div class="settings_item d-flex flex-wrap align-items-center gap-3">
+                                <div class="settings_item_icon">
+                                    <i class="fas fa-users-cog"></i>
+                                </div>
+                                <a class="settings_item_text d-block" href="{{ route('admin.admin-setting') }}">
+                                    <h5>{{ __('Admin Settings') }}</h5>
+                                    <span>{{ __('Manage your admin settings') }}</span>
+                                </a>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -48,17 +59,7 @@
                                 </a>
                             </div>
                         </div>
-                        <div class="col-sm-6 col-lg-4">
-                            <div class="settings_item d-flex flex-wrap align-items-center gap-3">
-                                <div class="settings_item_icon">
-                                    <i class="fas fa-broom"></i>
-                                </div>
-                                <a class="settings_item_text d-block" href="{{ route('admin.system.cleanup') }}">
-                                    <h5>{{ __('Cleanup System') }}</h5>
-                                    <span>{{ __('Cleanup your unused data in database') }}</span>
-                                </a>
-                            </div>
-                        </div>
+
                     </div>
                 </div>
             </div>

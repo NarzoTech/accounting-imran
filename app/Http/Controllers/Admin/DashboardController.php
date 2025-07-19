@@ -87,10 +87,10 @@ class DashboardController extends Controller
             'countInvoices',
             'totalCollection',
             'totalCustomers',
-            'totalExpensesCurrentPeriod', // Renamed for clarity and consistency
+            'totalExpensesCurrentPeriod',
             'totalProducts',
-            'filter', // Pass the active filter to the view
-            'filterText' // Pass the display text for the current filter
+            'filter',
+            'filterText'
         ));
     }
 

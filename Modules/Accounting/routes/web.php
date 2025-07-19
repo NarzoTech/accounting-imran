@@ -15,6 +15,7 @@ use Modules\Accounting\Http\Controllers\InvoiceController;
 use Modules\Accounting\Http\Controllers\InvoicePaymentController;
 use Modules\Accounting\Http\Controllers\ProductController;
 use Modules\Accounting\Http\Controllers\RepaymentController;
+use Modules\Accounting\Http\Controllers\ReportController;
 
 Route::group(['as' => 'admin.', 'prefix' => 'admin', 'middleware' => ['auth:admin', 'translation']], function () {
     Route::resource('account', AccountController::class)->names('account');
@@ -46,8 +47,10 @@ Route::group(['as' => 'admin.', 'prefix' => 'admin', 'middleware' => ['auth:admi
     Route::get('reports/container', [AccountingController::class, 'containerReport'])->name('reports.container');
     Route::get('reports/product', [AccountingController::class, 'productReport'])->name('reports.product');
     Route::get('reports/category', [AccountingController::class, 'categoryReport'])->name('reports.category');
-    Route::get('reports/income', [AccountingController::class, 'incomeReport'])->name('reports.income');
+    Route::get('reports/income', [ReportController::class, 'income'])->name('reports.income');
     Route::get('reports/transfer', [AccountingController::class, 'transferReport'])->name('reports.transfer');
-    Route::get('reports/expense', [AccountingController::class, 'expenseReport'])->name('reports.expense');
+    Route::get('reports/expense', [ReportController::class, 'expense'])->name('reports.expense');
     Route::get('reports/investor', [AccountingController::class, 'investorReport'])->name('reports.investor');
+    Route::get('reports/income-data', [ReportController::class, 'getIncomeData'])->name('reports.get_income_data');
+    Route::get('reports/expense-data', [ReportController::class, 'getExpenseData'])->name('reports.get_expense_data');
 });

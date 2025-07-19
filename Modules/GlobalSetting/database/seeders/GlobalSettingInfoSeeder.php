@@ -15,7 +15,7 @@ class GlobalSettingInfoSeeder extends Seeder
         Setting::truncate();
 
         $setting_data = [
-            'app_name' => 'NarzoTech',
+            'app_name' => 'Unique Cargo',
             'version' => '1.0.0',
             'theme' => 1,
             'logo' => 'uploads/website-images/logo_1.png',
@@ -83,6 +83,9 @@ class GlobalSettingInfoSeeder extends Seeder
             'contact_team_member' => 'active',
             'search_engine_indexing' => 'active',
             'project' => 'maxland',
+            'company_address' => '123 Main Street, City, Country',
+            'company_phone' => '+1234567890',
+            'company_email' => 'email@example.com',
         ];
 
         foreach ($setting_data as $index => $setting_item) {

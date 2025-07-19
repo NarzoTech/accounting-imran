@@ -7,22 +7,22 @@
         content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, target-densityDpi=device-dpi" />
 
 
-    <meta name="description" content="@yield('meta_description', 'Book trusted services anytime, anywhere. From home cleaning to beauty, plumbing, and more — your one-stop on-demand service platform.')">
-    <meta name="keywords" content="@yield('meta_keywords', 'on-demand services, home services, beauty services, cleaning, repair, booking services, multipurpose services')">
+    <meta name="description" content="@yield('meta_description', 'Find the best real estate listings - homes, apartments, and properties for sale or rent.')">
+    <meta name="keywords" content="@yield('meta_keywords', 'real estate, property, homes for sale, apartments, houses, rent, buy')">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="{{ url()->current() }}">
 
+
     {{-- Open Graph for Social Sharing --}}
-    <meta property="og:title" content="@yield('og_title', 'Book Services On Demand')">
-    <meta property="og:description" content="@yield('og_description', 'Get instant access to home cleaning, repairs, salon at home, and many more professional services.')">
+    <meta property="og:title" content="@yield('og_title', 'Real Estate Listings')">
+    <meta property="og:description" content="@yield('og_description', 'Browse top real estate properties across regions. Buy, sell or rent with ease.')">
     <meta property="og:image" content="@yield('og_image', asset($setting->logo))">
     <meta property="og:url" content="{{ url()->current() }}">
     <meta property="og:type" content="website">
-    <meta property="og:site_name" content="{{ $setting->app_name }}">
 
 
     {{-- Dynamic Page Title --}}
-    <title>@yield('title', 'Multipurpose On Demand Service')</title>
+    <title>@yield('title', 'Real Estate Listings')</title>
 
     {{-- Favicon --}}
     <link rel="icon" type="image/png" href="{{ asset('website/assets/images/favicon.png') }}">

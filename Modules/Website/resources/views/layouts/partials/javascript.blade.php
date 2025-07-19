@@ -12,11 +12,6 @@
 <!--font-awesome js-->
 <script src="{{ asset('website/assets/js/Font-Awesome.js') }}"></script>
 <!--nice-select js-->
-<script src="{{ asset('website/assets/js/venobox.min.js') }}"></script>
-<script src="{{ asset('website/assets/js/jquery.waypoints.min.js') }}"></script>
-<script src="{{ asset('website/assets/js/jquery.countup.min.js') }}"></script>
-<script src="{{ asset('website/assets/js/jQuery-plugin-progressbar.js') }}"></script>
-<script src="{{ asset('website/assets/js/pointer.js') }}"></script>
 <script src="{{ asset('website/assets/js/jquery.nice-select.min.js') }}"></script>
 <!--select-2 js-->
 <script src="{{ asset('website/assets/js/select2.min.js') }}"></script>
@@ -30,16 +25,14 @@
 <script src="{{ asset('website/assets/js/wow.min.js') }}"></script>
 <!--animated barfiller js-->
 <script src="{{ asset('website/assets/js/animated_barfiller.js') }}"></script>
-<script src="{{ asset('website/assets/js/range_slider.js') }}"></script>
-
 @if (str_contains(request()->route()->getName(), '.user'))
     <script src="{{ asset('website/assets/js/jquery.simple-bar-graph.min.js') }}"></script>
 @endif
 <!--simple-bar-graph js-->
 <!--sticky sidebar js-->
-<script src="{{ asset('backend/tinymce/js/tinymce/tinymce.min.js') }}"></script>
 <script src="{{ asset('website/assets/js/sticky_sidebar.js') }}"></script>
 <!--summernote js-->
+<script src="{{ asset('backend/tinymce/js/tinymce/tinymce.min.js') }}"></script>
 <!--scroll button js-->
 <script src="{{ asset('website/assets/js/scroll_button.js') }}"></script>
 <script src="{{ asset('global/toastr/toastr.min.js') }}"></script>

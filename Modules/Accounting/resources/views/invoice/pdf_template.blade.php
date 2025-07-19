@@ -134,10 +134,10 @@
         </div>
 
         <div class="company-details text-right">
-            <h3>{{ config('app.name', 'Your Company Name') }}</h3>
-            <p>{{ config('app.company_address', 'Your Company Address') }}</p>
-            <p>{{ config('app.company_email', 'Your Company Email') }}</p>
-            <p>{{ config('app.company_phone', 'Your Company Phone') }}</p>
+            <h5>{{ $setting->app_name }}</h5>
+            <p>{{ $setting->company_address }}</p>
+            <p>{{ $setting->company_email }}</p>
+            <p>{{ $setting->company_phone }}</p>
         </div>
 
         <h3 class="mt-4 mb-3">{{ __('Invoice Items') }}</h3>

@@ -20,7 +20,36 @@
                                         <div class="col-12">
                                             <div class="form-group">
                                                 <x-admin.form-input id="app_name" name="app_name"
-                                                    label="{{ __('App Name') }}" value="{{ $setting->app_name }}" />
+                                                    label="{{ __('Company Name') }}" value="{{ $setting->app_name }}" />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col-12">
+                                            <div class="form-group">
+                                                <x-admin.form-input id="company_address" name="company_address"
+                                                    label="{{ __('Company Address') }}"
+                                                    value="{{ $setting->company_address }}" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-12">
+                                            <div class="form-group">
+                                                <x-admin.form-input id="company_email" name="company_email"
+                                                    label="{{ __('Company Email') }}"
+                                                    value="{{ $setting->company_email }}" />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col-12">
+                                            <div class="form-group">
+                                                <x-admin.form-input id="company_phone" name="company_phone"
+                                                    label="{{ __('Company Email') }}"
+                                                    value="{{ $setting->company_phone }}" />
                                             </div>
                                         </div>
                                     </div>

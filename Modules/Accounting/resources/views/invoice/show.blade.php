@@ -66,10 +66,10 @@
                     </div>
                     <div class="col-md-6 text-md-end">
                         <div class="invoice-company-details">
-                            <h5>{{ config('app.name', 'Your Company Name') }}</h5> {{-- Use config for company name --}}
-                            <p>{{ config('app.company_address', 'Your Company Address') }}</p> {{-- Use config for company address --}}
-                            <p>{{ config('app.company_email', 'Your Company Email') }}</p> {{-- Use config for company email --}}
-                            <p>{{ config('app.company_phone', 'Your Company Phone') }}</p> {{-- Use config for company phone --}}
+                            <h5>{{ $setting->app_name }}</h5>
+                            <p>{{ $setting->company_address }}</p>
+                            <p>{{ $setting->company_email }}</p>
+                            <p>{{ $setting->company_phone }}</p>
                         </div>
                     </div>
                 </div>

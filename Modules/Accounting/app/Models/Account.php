@@ -36,4 +36,8 @@ class Account extends Model
     {
         return $this->hasMany(AccountTransfer::class, 'to_account_id');
     }
+    public function payments()
+    {
+        return $this->hasMany(InvoicePayment::class);
+    }
 }

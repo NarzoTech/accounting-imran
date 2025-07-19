@@ -7,6 +7,8 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Modules\Accounting\Models\Account;
+use Modules\Accounting\Models\AccountTransaction;
 use Modules\Accounting\Models\Container;
 use Modules\Accounting\Models\Customer;
 use Modules\Accounting\Models\Invoice;
@@ -114,7 +116,8 @@ class InvoiceController extends Controller
         $containers = Container::where('status', 'Arrived')->get();
         $products = Product::where('status', 1)->get();
         $customers = Customer::get();
-        return view('accounting::invoice.create', compact('containers', 'products', 'customers'));
+        $accounts = Account::all();
+        return view('accounting::invoice.create', compact('containers', 'products', 'customers', 'accounts'));
     }
 
     /**
@@ -123,72 +126,97 @@ class InvoiceController extends Controller
     public function store(Request $request)
     {
 
-        $request->validate([
-            'customer_id' => 'required|exists:customers,id',
-            'invoice_number' => 'required|unique:invoices,invoice_number',
-            'invoice_date' => 'required|date',
-            'payment_date' => 'required|date',
-            'items' => 'required|array|min:1',
-            'items.*.product_id' => 'required|exists:products,id',
-            'items.*.quantity' => 'required|numeric|min:1',
-            'items.*.price' => 'required|numeric|min:0',
-            'items.*.amount' => 'required|numeric|min:0',
+        $validatedData = $request->validate([
+            'customer_id'         => 'required|exists:customers,id',
+            'invoice_number'      => 'required|string|max:255|unique:invoices,invoice_number',
+            'po_so_number'        => 'nullable|string|max:255',
+            'invoice_date'        => 'required|date',
+            'payment_date'        => 'required|date|after_or_equal:invoice_date',
+            'container_id'        => 'nullable|exists:containers,id',
             'discount_percentage' => 'nullable|numeric|min:0|max:100',
-            'delivery_charge' => 'nullable|numeric|min:0',
-            'amount_paid' => 'nullable|numeric|min:0',
-            'payment_account' => 'nullable|string|max:255',
+            'delivery_charge'     => 'nullable|numeric|min:0',
+            'notes_terms'         => 'nullable|string',
+            'invoice_footer'      => 'nullable|string',
+            'items'               => 'required|array|min:1',
+            'items.*.product_id'  => 'nullable|exists:products,id', // Can be null if new product
+            'items.*.description' => 'nullable|string',
+            'items.*.quantity'    => 'required|integer|min:1',
+            'items.*.unit'        => 'nullable|string|max:30',
+            'items.*.price'       => 'required|numeric|min:0',
+            'items.*.amount'      => 'required|numeric|min:0',
+
+            'payment_status_input' => 'required|in:unpaid,paid',
+            'payment_account_id'   => 'nullable|required_if:payment_status_input,paid|exists:accounts,id',
+            'amount_paid'          => 'nullable|numeric|min:0', // This is the amount paid during creation
         ]);
 
-        DB::beginTransaction();
+        DB::transaction(function () use ($request, $validatedData) {
+            // Calculate subtotal and total amount based on items
+            $subtotal = 0;
+            foreach ($validatedData['items'] as $item) {
+                $subtotal += $item['quantity'] * $item['price'];
+            }
 
-        try {
-            $subtotal = collect($request->items)->sum('amount');
-            $discount = $subtotal * ($request->discount_percentage / 100);
-            $total = $subtotal - $discount + $request->delivery_charge;
+            $discountAmount = ($subtotal * ($validatedData['discount_percentage'] ?? 0) / 100);
+            $deliveryCharge = $validatedData['delivery_charge'] ?? 0;
+            $totalAmount = $subtotal - $discountAmount + $deliveryCharge;
 
             $invoice = Invoice::create([
-                'customer_id' => $request->customer_id,
-                'invoice_number' => $request->invoice_number,
-                'po_so_number' => $request->po_so_number,
-                'invoice_date' => $request->invoice_date,
-                'payment_date' => $request->payment_date,
-                'container_id' => $request->container_id,
-                'discount_percentage' => $request->discount_percentage,
-                'delivery_charge' => $request->delivery_charge,
-                'subtotal' => $subtotal,
-                'total_amount' => $total,
-                'notes_terms' => $request->notes_terms,
-                'invoice_footer' => $request->invoice_footer,
+                'customer_id'         => $validatedData['customer_id'],
+                'invoice_number'      => $validatedData['invoice_number'],
+                'po_so_number'        => $validatedData['po_so_number'],
+                'invoice_date'        => $validatedData['invoice_date'],
+                'payment_date'        => $validatedData['payment_date'],
+                'container_id'        => $validatedData['container_id'],
+                'discount_percentage' => $validatedData['discount_percentage'] ?? 0,
+                'delivery_charge'     => $deliveryCharge,
+                'subtotal'            => $subtotal,
+                'total_amount'        => $totalAmount,
+                'notes_terms'         => $validatedData['notes_terms'],
+                'invoice_footer'      => $validatedData['invoice_footer'],
             ]);
 
-            foreach ($request->items as $item) {
-                $invoice->items()->create($item);
+            // Save invoice items
+            foreach ($validatedData['items'] as $itemData) {
+                $invoice->items()->create($itemData);
             }
 
-            if ($request->amount_paid > 0) {
+            // Handle payment if status is 'paid'
+            if ($validatedData['payment_status_input'] === 'paid' && ($validatedData['amount_paid'] ?? 0) > 0) {
+                $paymentAmount = $validatedData['amount_paid'];
+                $paymentAccountId = $validatedData['payment_account_id'];
+
+                // Create InvoicePayment record
                 $invoice->payments()->create([
-                    'payment_account' => $request->payment_account,
-                    'amount_paid' => $request->amount_paid,
-                    'payment_date' => $request->payment_date,
+                    'account_id'   => $paymentAccountId,
+                    'amount'       => $paymentAmount,
+                    'payment_type' => 'invoice_payment', // Always invoice_payment for creation
+                    'method'       => $request->input('payment_method_text'), // Get method from a text input
+                    'note'         => 'Payment received during invoice creation.',
+                ]);
+
+                // Update Account balance
+                $account = Account::find($paymentAccountId);
+                $account->increment('balance', $paymentAmount);
+
+                // Record AccountTransaction
+                AccountTransaction::create([ // Ensure correct namespace for AccountTransaction
+                    'account_id' => $paymentAccountId,
+                    'type'       => 'invoice_payment',
+                    'amount'     => $paymentAmount,
+                    'reference'  => 'Invoice #' . $invoice->invoice_number,
+                    'note'       => 'Payment received for invoice creation.',
                 ]);
             }
+        });
 
-            DB::commit();
 
-            $notification = [
-                'message' => 'Invoice created successfully.',
-                'alert-type' => 'success',
-            ];
+        $notification = [
+            'message' => 'Invoice created successfully.',
+            'alert-type' => 'success',
+        ];
 
-            return redirect()->route('admin.invoice.index')->with($notification);
-        } catch (\Exception $e) {
-            DB::rollBack();
-            $notification = [
-                'message' => 'Failed to create invoice: ' . $e->getMessage(),
-                'alert-type' => 'error',
-            ];
-            return back()->with($notification);
-        }
+        return redirect()->route('admin.invoice.index')->with($notification);
     }
 
     /**
@@ -224,15 +252,152 @@ class InvoiceController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit($id)
+    public function edit(Invoice $invoice)
     {
-        return view('accounting::edit');
+        // Eager load relationships needed for pre-filling the form
+        $invoice->load(['customer', 'items.product', 'container', 'payments']);
+
+        $customers = Customer::all(); // Fetch all customers for the modal
+        $products = Product::all();   // Fetch all products for the modal
+        $containers = Container::all(); // Fetch all containers
+        $accounts = Account::all();   // Fetch all accounts for payment section
+
+        // Determine initial payment status and amount paid for the edit view
+        $initialPaymentStatus = $invoice->payment_status; // 'Paid', 'Partially Paid', 'Unpaid'
+        $initialAmountPaid = $invoice->amount_paid;
+
+        return view('accounting::invoice.edit', compact(
+            'invoice',
+            'customers',
+            'products',
+            'containers',
+            'accounts',
+            'initialPaymentStatus',
+            'initialAmountPaid'
+        ));
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, $id) {}
+    public function update(Request $request, Invoice $invoice)
+    {
+        // Validation rules (adjust as per your exact requirements)
+        $validatedData = $request->validate([
+            'customer_id'         => 'required|exists:customers,id',
+            'invoice_number'      => 'required|string|max:255|unique:invoices,invoice_number,' . $invoice->id, // Unique except for self
+            'po_so_number'        => 'nullable|string|max:255',
+            'invoice_date'        => 'required|date',
+            'payment_date'        => 'required|date|after_or_equal:invoice_date',
+            'container_id'        => 'nullable|exists:containers,id',
+            'discount_percentage' => 'nullable|numeric|min:0|max:100',
+            'delivery_charge'     => 'nullable|numeric|min:0',
+            'notes_terms'         => 'nullable|string',
+            'invoice_footer'      => 'nullable|string',
+            'items'               => 'required|array|min:1',
+            'items.*.item_id'     => 'nullable|exists:invoice_items,id', // Existing item ID
+            'items.*.product_id'  => 'nullable|exists:products,id',
+            'items.*.description' => 'nullable|string',
+            'items.*.quantity'    => 'required|integer|min:1',
+            'items.*.unit'        => 'nullable|string|max:30',
+            'items.*.price'       => 'required|numeric|min:0',
+            'items.*.amount'      => 'required|numeric|min:0',
+            'items_to_delete'     => 'nullable|array', // IDs of items to delete
+            'items_to_delete.*'   => 'exists:invoice_items,id',
+
+            'payment_status_input' => 'required|in:unpaid,paid',
+            'payment_account_id'   => 'nullable|required_if:payment_status_input,paid|exists:accounts,id',
+            'amount_paid' => 'nullable|numeric|min:0', // This is amount paid on THIS update
+        ]);
+
+        DB::transaction(function () use ($request, $validatedData, $invoice) {
+            // Calculate subtotal and total amount based on items
+            $subtotal = 0;
+            foreach ($validatedData['items'] as $item) {
+                $subtotal += $item['quantity'] * $item['price'];
+            }
+
+            $discountAmount = ($subtotal * ($validatedData['discount_percentage'] ?? 0) / 100);
+            $deliveryCharge = $validatedData['delivery_charge'] ?? 0;
+            $totalAmount = $subtotal - $discountAmount + $deliveryCharge;
+
+            // Update invoice core details
+            $invoice->update([
+                'customer_id'         => $validatedData['customer_id'],
+                'invoice_number'      => $validatedData['invoice_number'],
+                'po_so_number'        => $validatedData['po_so_number'],
+                'invoice_date'        => $validatedData['invoice_date'],
+                'payment_date'        => $validatedData['payment_date'],
+                'container_id'        => $validatedData['container_id'],
+                'discount_percentage' => $validatedData['discount_percentage'] ?? 0,
+                'delivery_charge'     => $deliveryCharge,
+                'subtotal'            => $subtotal,
+                'total_amount'        => $totalAmount,
+                'notes_terms'         => $validatedData['notes_terms'],
+                'invoice_footer'      => $validatedData['invoice_footer'],
+            ]);
+
+            // Handle invoice items update/create/delete
+            $existingItemIds = $invoice->items->pluck('id')->toArray();
+            $itemsToKeep = [];
+
+            foreach ($validatedData['items'] as $itemData) {
+                if (isset($itemData['item_id']) && in_array($itemData['item_id'], $existingItemIds)) {
+                    // Update existing item
+                    $idToUpdate = $itemData['item_id'];
+                    unset($itemData['item_id']);
+
+                    $invoice->items()->where('id', $idToUpdate)->update($itemData);
+                    $itemsToKeep[] = $idToUpdate;
+                } else {
+                    // Create new item
+                    $invoice->items()->create($itemData);
+                }
+            }
+
+            // Delete items not in the submitted list
+            $itemsToDelete = array_diff($existingItemIds, $itemsToKeep);
+            if (!empty($itemsToDelete)) {
+                $invoice->items()->whereIn('id', $itemsToDelete)->delete();
+            }
+
+            $currentPaymentStatus = $invoice->payment_status; // Get status BEFORE this update
+            $newPaymentStatusInput = $validatedData['payment_status_input'];
+            $amountPaidOnUpdate = $validatedData['amount_paid'] ?? 0;
+
+            // If invoice was previously unpaid/partial and is now marked as paid with an amount
+            if ($amountPaidOnUpdate > 0) {
+
+                $paymentAccountId = $validatedData['payment_account_id'];
+
+                $invoice->payments()->create([
+                    'account_id'   => $paymentAccountId,
+                    'amount'       => $amountPaidOnUpdate,
+                    'payment_type' => 'invoice_payment',
+                    'method'       => $request->input('payment_method_text_update'), // Get method from a text input
+                    'note'         => 'Payment received during invoice update.',
+                ]);
+
+                // Update Account balance
+                $account = Account::find($paymentAccountId);
+                $account->increment('balance', $amountPaidOnUpdate);
+
+                // Record AccountTransaction
+                AccountTransaction::create([
+                    'account_id' => $paymentAccountId,
+                    'type'       => 'invoice_payment',
+                    'amount'     => $amountPaidOnUpdate,
+                    'reference'  => 'Invoice #' . $invoice->invoice_number . ' (Update)',
+                    'note'       => 'Payment received for invoice update.',
+                ]);
+            }
+        });
+
+        return redirect()->route('admin.invoice.index')->with([
+            'message' => 'Invoice updated successfully.',
+            'alert-type' => 'success',
+        ]);
+    }
 
     /**
      * Remove the specified resource from storage.

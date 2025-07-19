@@ -6,6 +6,12 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Modules\Accounting\Models\Account;
+use Modules\Accounting\Models\AccountTransaction;
+use Modules\Accounting\Models\Customer;
+use Modules\Accounting\Models\Invoice;
+use Modules\Accounting\Models\InvoicePayment;
+use Modules\Accounting\Models\Product;
 
 class DashboardController extends Controller
 {
@@ -14,8 +20,78 @@ class DashboardController extends Controller
      */
     public function dashboard(Request $request)
     {
+        // Get the filter from the request, default to 'month'
+        $filter = $request->input('filter', 'month');
 
-        return view('admin.dashboard');
+        // Determine date range based on filter
+        $startDate = Carbon::now()->startOfMonth(); // Default to month
+        $endDate = Carbon::now()->endOfMonth(); // Default to month
+
+        $filterText = 'This Month'; // Default display text for dropdowns
+
+        switch ($filter) {
+            case 'week':
+                $startDate = Carbon::now()->startOfWeek();
+                $endDate = Carbon::now()->endOfWeek();
+                $filterText = 'This Week';
+                break;
+            case 'month':
+                $startDate = Carbon::now()->startOfMonth();
+                $endDate = Carbon::now()->endOfMonth();
+                $filterText = 'This Month';
+                break;
+            case 'year':
+                $startDate = Carbon::now()->startOfYear();
+                $endDate = Carbon::now()->endOfYear();
+                $filterText = 'This Year';
+                break;
+                // No specific cases for 'last7days', 'last30days' as they align with 'week' and 'month'
+                // if we are using the same filter logic for all cards.
+                // If you need truly separate filters for expense breakdown, you'd need another request parameter.
+        }
+
+        // Common data for all filters
+        $totalBalance = Account::sum('balance');
+        $totalCustomers = Customer::count();
+        $totalProducts = Product::count();
+
+        // Data that needs to be filtered by date range
+        $inflows = AccountTransaction::where('type', 'deposit')
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->sum('amount');
+
+        $outflows = AccountTransaction::where('type', 'expense')
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->sum('amount');
+
+        $totalInvoicesAmount = Invoice::whereBetween('invoice_date', [$startDate, $endDate])
+            ->sum('total_amount');
+
+        $countInvoices = Invoice::whereBetween('invoice_date', [$startDate, $endDate])
+            ->count();
+
+        $totalCollection = InvoicePayment::whereBetween('created_at', [$startDate, $endDate])
+            ->sum('amount');
+
+        // Expense Breakdown now also uses the main $startDate and $endDate
+        $totalExpensesCurrentPeriod = AccountTransaction::where('type', 'expense')
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->sum('amount');
+
+
+        return view('admin.dashboard', compact(
+            'totalBalance',
+            'inflows',
+            'outflows',
+            'totalInvoicesAmount',
+            'countInvoices',
+            'totalCollection',
+            'totalCustomers',
+            'totalExpensesCurrentPeriod', // Renamed for clarity and consistency
+            'totalProducts',
+            'filter', // Pass the active filter to the view
+            'filterText' // Pass the display text for the current filter
+        ));
     }
 
     public function setLanguage()
@@ -61,20 +137,5 @@ class DashboardController extends Controller
         $notification = ['message' => $notification, 'alert-type' => 'success'];
 
         return redirect()->back()->with($notification);
-    }
-
-    /**
-     * @param $uuid
-     * @param $type
-     */
-    public function invoice(Request $request, $uuid, $type = 'order')
-    {
-        if ($type == 'order') {
-            $order = Order::whereUuid($uuid)->firstOrFail();
-        } else {
-            $order = SubscriptionHistory::whereUuid($uuid)->firstOrFail();
-        }
-
-        dd($order, $request->all());
     }
 }

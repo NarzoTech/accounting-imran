@@ -22,6 +22,7 @@
                                 <th>Phone</th>
                                 <th>Invoices in {{ now()->year }}</th>
                                 <th>Customer Since</th>
+                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -105,6 +106,13 @@
                     {
                         data: 'created_at',
                         name: 'created_at'
+                    },
+                    {
+                        // Add this new column definition for the 'action' buttons
+                        data: 'action', // This matches the 'action' key from your server-side response
+                        name: 'action',
+                        orderable: false, // Actions column should not be sortable
+                        searchable: false // Actions column should not be searchable
                     },
                 ]
             });

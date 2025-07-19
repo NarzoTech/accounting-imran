@@ -29,7 +29,10 @@ class Invoice extends Model
     ];
 
     protected $appends = ['amount_paid', 'amount_due', 'payment_status'];
-
+    protected $casts = [
+        'invoice_date' => 'date',
+        'payment_date' => 'date',
+    ];
 
 
     public function customer()

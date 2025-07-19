@@ -25,7 +25,7 @@ class InvoicePaymentController extends Controller
             return DataTables::of($data)
                 ->addIndexColumn()
                 ->addColumn('customer_name', function (InvoicePayment $payment) {
-                    return $payment->invoice->customer->name ?? 'Advance Payment'; // If invoice_id is null, it's an advance
+                    return $payment->invoice->customer->name ?? 'Advance Payment';
                 })
                 ->addColumn('invoice_number', function (InvoicePayment $payment) {
                     return $payment->invoice->invoice_number ?? 'N/A';
@@ -60,11 +60,41 @@ class InvoicePaymentController extends Controller
     /**
      * Show the form for creating a new resource.
      */
-    public function create()
+    public function create(Request $request)
     {
-        $customers = Customer::all();
+        // Ensure a customer_id is provided
+        if (!$request->has('customer_id')) {
+            return back()->with([
+                'message'    => __('Please select a customer first.'),
+                'alert-type' => 'warning'
+            ]);
+        }
+
+        $customer = Customer::find($request->get('customer_id'));
+
+        // Handle case where customer is not found
+        if (!$customer) {
+            return back()->with([
+                'message'    => __('Customer not found.'),
+                'alert-type' => 'error'
+            ]);
+        }
+
         $accounts = Account::all();
-        return view('accounting::invoice_payments.create', compact('customers', 'accounts'));
+
+        // Fetch all outstanding invoices for the customer
+        // An invoice is 'outstanding' if its total_amount is greater than the sum of its associated invoice payments.
+        $invoices = Invoice::where('customer_id', $customer->id)
+            ->where(function ($query) {
+                $query->whereRaw('invoices.total_amount > (SELECT COALESCE(SUM(amount), 0) FROM invoice_payments WHERE invoice_payments.invoice_id = invoices.id AND invoice_payments.payment_type = "invoice_payment")');
+            })
+            ->orderBy('invoice_date', 'asc') // Order by date for sequential allocation
+            ->get();
+
+        // Calculate the total due amount for all outstanding invoices
+        $totalDue = $invoices->sum('amount_due'); // amount_due is an accessor in your Invoice model
+
+        return view('accounting::invoice_payments.create', compact('customer', 'accounts', 'invoices', 'totalDue'));
     }
 
     /**
@@ -72,73 +102,113 @@ class InvoicePaymentController extends Controller
      */
     public function store(Request $request)
     {
-        $validatedData = $request->validate([
-            'customer_id' => 'required|exists:customers,id',
-            'amount' => 'required|numeric|min:0.01',
-            'account_id' => 'required|exists:accounts,id',
-            'method' => 'nullable|string|max:255',
-            'note' => 'nullable|string',
-            'invoice_ids' => 'nullable|array',
-            'invoice_ids.*' => 'exists:invoices,id',
+        $request->validate([
+            'customer_id'       => 'required|exists:customers,id',
+            'receiving_amount'  => 'required|numeric|min:0.01',
+            'account_id'        => 'required|exists:accounts,id',
+            'payment_date'      => 'required|date_format:d-m-Y',
+            'amounts'           => 'nullable|array',
+            'amounts.*'         => 'numeric|min:0',
         ]);
 
-        DB::transaction(function () use ($validatedData, $request) {
-            $paymentAmount = $validatedData['amount'];
-            $remainingPayment = $paymentAmount;
-            $customer = Customer::find($validatedData['customer_id']);
-            $paymentAccount = Account::find($validatedData['account_id']);
+        $customerId = $request->input('customer_id');
+        $receivingAmount = (float) $request->input('receiving_amount');
+        $accountId = $request->input('account_id');
+        $paymentDate = \Carbon\Carbon::createFromFormat('d-m-Y', $request->input('payment_date'))->format('Y-m-d');
+        $appliedAmounts = $request->input('amounts', []);
+        $method = $request->input('method'); // assuming 'method' input is also present as in your original form
+        $note = $request->input('note'); // assuming 'note' input is also present
 
-            // 1. Apply payment to selected invoices first
-            if (!empty($validatedData['invoice_ids'])) {
-                $invoicesToPay = Invoice::whereIn('id', $validatedData['invoice_ids'])
-                    ->where('customer_id', $customer->id)
-                    ->orderBy('invoice_date', 'asc') // Pay oldest first
-                    ->get();
 
-                foreach ($invoicesToPay as $invoice) {
-                    if ($remainingPayment <= 0) break; // No more payment left
+        DB::beginTransaction();
+        try {
+            $totalApplied = 0;
 
-                    $due = $invoice->amount_due;
-                    $amountToApplyToInvoice = min($remainingPayment, $due);
+            // Iterate through the amounts provided for each invoice
+            foreach ($appliedAmounts as $invoiceId => $amount) {
+                $amount = (float) $amount;
+                if ($amount > 0) {
+                    $invoice = Invoice::find($invoiceId);
+                    if ($invoice) {
+                        // Ensure the applied amount does not exceed the invoice's current due
+                        $dueBeforePayment = $invoice->amount_due;
+                        $amountToApply = min($amount, $dueBeforePayment);
 
-                    if ($amountToApplyToInvoice > 0) {
-                        InvoicePayment::create([
-                            'invoice_id' => $invoice->id,
-                            'account_id' => $validatedData['account_id'],
-                            'amount' => $amountToApplyToInvoice,
-                            'payment_type' => 'invoice_payment',
-                            'method' => $validatedData['method'],
-                            'note' => $validatedData['note'],
-                        ]);
-                        $remainingPayment -= $amountToApplyToInvoice;
+                        if ($amountToApply > 0) {
+                            $invoice->payments()->create([
+                                'account_id'   => $accountId,
+                                'amount'       => $amountToApply,
+                                'payment_type' => 'invoice_payment',
+                                'method'       => $method,
+                                'note'         => $note,
+                                // Assuming your invoice_payments table does not have a 'payment_date' column directly.
+                                // If it does, you can add it here. Otherwise, the 'created_at' will serve as the payment timestamp.
+                                // If your InvoicePayment model has a 'payment_date' field, use it:
+                                // 'payment_date' => $paymentDate,
+                            ]);
+
+                            // Optionally, update account balance if your account model has a method for it
+                            // $account = Account::find($accountId);
+                            // $account->balance += $amountToApply;
+                            // $account->save();
+
+                            // Also record in account_transactions
+                            // AccountTransaction::create([
+                            //     'account_id' => $accountId,
+                            //     'type'       => 'invoice_payment',
+                            //     'amount'     => $amountToApply,
+                            //     'reference'  => 'Invoice #' . $invoice->invoice_number,
+                            //     'note'       => $note,
+                            // ]);
+
+                            $totalApplied += $amountToApply;
+                        }
                     }
                 }
             }
 
-            // 2. If there's any remaining payment, record it as an advance
-            if ($remainingPayment > 0) {
-                InvoicePayment::create([
-                    'invoice_id' => null, // No specific invoice for advance
-                    'account_id' => $validatedData['account_id'],
-                    'amount' => $remainingPayment,
-                    'payment_type' => 'advance',
-                    'method' => $validatedData['method'],
-                    'note' => 'Advance payment from customer ' . $customer->name . '. ' . ($validatedData['note'] ?? ''),
+            // Handle any remaining amount as an advance payment if totalApplied is less than receivingAmount
+            $remainingAmount = $receivingAmount - $totalApplied;
+            if ($remainingAmount > 0) {
+                // Assuming you have an 'advance' payment_type in your invoice_payments table
+                // or a separate mechanism for advance payments on the Customer model.
+                // For simplicity, we'll add it to invoice_payments associated with customer, without specific invoice.
+                // You might need to adjust this based on your advance payment logic.
+                // This could also be a separate table for customer advances.
+                $customer->payments()->create([
+                    'account_id'   => $accountId,
+                    'amount'       => $remainingAmount,
+                    'payment_type' => 'advance', // Or 'advance_payment' as per your enum
+                    'method'       => $method,
+                    'note'         => $note ? $note . ' (Advance Payment)' : 'Advance Payment',
+                    // 'payment_date' => $paymentDate,
                 ]);
+
+                // Update account balance and record transaction for advance as well
+                // $account = Account::find($accountId);
+                // $account->balance += $remainingAmount;
+                // $account->save();
+                // AccountTransaction::create([
+                //     'account_id' => $accountId,
+                //     'type'       => 'advance_payment',
+                //     'amount'     => $remainingAmount,
+                //     'reference'  => 'Customer Advance: ' . $customer->name,
+                //     'note'       => $note,
+                // ]);
             }
 
-            // 3. Record a single account transaction for the total payment received
-            AccountTransaction::create([
-                'account_id' => $validatedData['account_id'],
-                'type' => 'invoice_payment',
-                'amount' => $paymentAmount,
-                'reference' => 'Payment from ' . $customer->name,
-                'note' => $validatedData['note'],
+            DB::commit();
+            return redirect()->route('admin.customer.index')->with([
+                'message'    => __('Payment recorded successfully!'),
+                'alert-type' => 'success'
             ]);
-
-            // 4. Update the account balance (increase)
-            $paymentAccount->increment('balance', $paymentAmount);
-        });
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->withInput()->with([
+                'message'    => __('Failed to record payment: ') . $e->getMessage(),
+                'alert-type' => 'error'
+            ]);
+        }
     }
 
     /**

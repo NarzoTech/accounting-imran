@@ -3,6 +3,7 @@
 namespace Modules\Accounting\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -193,9 +194,31 @@ class InvoiceController extends Controller
     /**
      * Show the specified resource.
      */
-    public function show($id)
+    public function show(Invoice $invoice)
     {
-        return view('accounting::invoice.show');
+        // Eager load necessary relationships for the view
+        $invoice->load(['customer', 'items.product', 'payments.account']); // Assuming InvoiceItem has a 'product' relationship
+
+        // Pass the invoice data to the view
+        return view('accounting::invoice.show', compact('invoice'));
+    }
+
+    public function download($id)
+    {
+
+        $invoice = Invoice::findOrFail($id);
+        // Eager load necessary relationships for the PDF view
+        $invoice->load(['customer', 'items.product', 'payments.account']);
+
+        // Load the same view used for display, but for PDF generation
+        $pdf = Pdf::loadView('accounting::invoice.pdf_template', compact('invoice'));
+
+        // You might want a separate, simpler template for PDF to ensure consistent rendering
+        // For now, we'll assume 'accounting::invoice.pdf_template' exists and is optimized for PDF.
+        // If not, you can use the same 'show' view and adjust its CSS for print media.
+        // Example: $pdf = PDF::loadView('accounting::invoice.show', compact('invoice'));
+
+        return $pdf->download('invoice-' . $invoice->invoice_number . '.pdf');
     }
 
     /**

@@ -217,38 +217,7 @@ function admin_lang()
 // calculate currency
 function currency($price = '')
 {
-    // currency information will be loaded by Session value
-
-    $siteCurrencyId = getSessionCurrency();
-    $currencySetting = allCurrencies()->where('currency_code', $siteCurrencyId)->first();
-
-    // dd($siteCurrencyId);
-
-    $currency_icon = $currencySetting->currency_icon;
-    $currency_code = $currencySetting->currency_code;
-    $currency_rate = $currencySetting->currency_rate;
-    $currency_position = $currencySetting->currency_position;
-
-    if ($price) {
-        $price = $price * $currency_rate;
-        $price = number_format($price, 2, '.', ',');
-
-        if ($currency_position == 'before_price') {
-            $price = $currency_icon . $price;
-        } elseif ($currency_position == 'before_price_with_space') {
-            $price = $currency_icon . ' ' . $price;
-        } elseif ($currency_position == 'after_price') {
-            $price = $price . $currency_icon;
-        } elseif ($currency_position == 'after_price_with_space') {
-            $price = $price . ' ' . $currency_icon;
-        } else {
-            $price = $currency_icon . $price;
-        }
-
-        return $price;
-    } else {
-        return $currency_icon . '0.00';
-    }
+    return "BDT " . $price;
 }
 
 

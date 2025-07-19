@@ -22,12 +22,33 @@ class CustomerController extends Controller
 
             $customers = Customer::with(['invoices' => function ($q) use ($year) {
                 $q->whereYear('invoice_date', $year);
-            }])->withSum('invoices as total_due', 'due_amount');
+            }])->get();
+
+            $customers->each(function ($customer) {
+                $customer->total_due = $customer->invoices->sum->amount_due;
+            });
 
             return DataTables::of($customers)
                 ->addColumn('due', fn($row) => 'BDT ' . number_format($row->total_due ?? 0, 2))
                 ->addColumn('invoice_count', fn($row) => $row->invoices->count())
                 ->editColumn('created_at', fn($row) => $row->created_at->format('d M Y'))
+                ->addColumn('action', function ($row) {
+                    // Define URLs for the action buttons
+                    $showUrl = route('admin.customer.show', $row->id);
+                    $editUrl = route('admin.customer.edit', $row->id);
+                    $dueReceiveUrl = route('admin.invoice_payments.create', ['customer_id' => $row->id]); // Link to due receive form
+
+                    // Construct the HTML for the action buttons
+                    return '
+                        <div class="btn-group" role="group" aria-label="Customer Actions">
+                            <a href="' . $showUrl . '" class="btn btn-info btn-sm" title="View Details"><i class="fas fa-eye"></i></a>
+                            <a href="' . $editUrl . '" class="btn btn-primary btn-sm" title="Edit Customer"><i class="fas fa-edit"></i></a>
+                            <button type="button" onclick="deleteData(' . $row->id . ')" class="btn btn-danger btn-sm" title="Delete Customer"><i class="fas fa-trash"></i></button>
+                            <a href="' . $dueReceiveUrl . '" class="btn btn-success btn-sm" title="Receive Due"><i class="fas fa-money-bill-wave"></i> Due</a>
+                        </div>
+                    ';
+                })
+                ->rawColumns(['action'])
                 ->make(true);
         }
 
@@ -81,9 +102,11 @@ class CustomerController extends Controller
     /**
      * Show the specified resource.
      */
-    public function show($id)
+    public function show(Customer $customer)
     {
-        return view('accounting::customer.show');
+        $customer->load(['invoices.items', 'invoices.payments']); // Load invoices and their items/payments
+
+        return view('accounting::customer.show', compact('customer'));
     }
 
     /**

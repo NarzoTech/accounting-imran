@@ -130,7 +130,7 @@
                         <h4 class="section_title">{{ __('Profile Image') }}</h4>
                     </div>
                     <div class="card-body">
-                        <x-admin.form-image-preview name="profile_image" :required="false" />
+                        <x-admin.form-image-preview name="profile_image" :required="false" :label="__('Profile Image')" />
                     </div>
                 </div>
 

@@ -86,7 +86,7 @@
         <div class="col-md-4 mb-4">
             <div class="card shadow-sm h-100">
                 <div class="card-body">
-                    <h5 class="card-title mb-4">CUSTOMER, VENDOR, PRODUCTS</h5>
+                    <h5 class="card-title mb-4">CUSTOMER, PRODUCTS</h5>
                     <div class="d-flex align-items-center mb-3">
                         <i class="fas fa-users fs-4 me-3 text-primary"></i>
                         <div>
@@ -95,15 +95,7 @@
                                     class="fas fa-plus-circle me-1"></i> Create a new Customer</a>
                         </div>
                     </div>
-                    <div class="d-flex align-items-center mb-3">
-                        <i class="fas fa-handshake fs-4 me-3 text-info"></i>
-                        <div>
-                            {{-- Assuming $totalVendors from backend, if you implement it --}}
-                            <h4 class="mb-0">2 Vendors</h4> {{-- Replace 2 with {{ $totalVendors }} if available --}}
-                            <a href="#" class="text-info text-decoration-none"><i class="fas fa-plus-circle me-1"></i>
-                                Create a new Vendor</a>
-                        </div>
-                    </div>
+
                     <div class="d-flex align-items-center">
                         <i class="fas fa-box-open fs-4 me-3 text-success"></i>
                         <div>
@@ -159,7 +151,7 @@
                 e.preventDefault(); // Prevent default link behavior
 
                 const filterValue = $(this).data(
-                'filter'); // Get the filter value from data-filter attribute
+                    'filter'); // Get the filter value from data-filter attribute
                 const currentUrl = new URL(window.location.href);
 
                 // Set or update the 'filter' query parameter
@@ -171,7 +163,7 @@
 
             // Set the active dropdown text based on the current filter
             const currentFilter = new URL(window.location.href).searchParams.get('filter') ||
-            'month'; // Default to 'month'
+                'month'; // Default to 'month'
             const filterTextMap = {
                 'week': 'This Week',
                 'month': 'This Month',

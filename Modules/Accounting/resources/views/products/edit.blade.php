@@ -143,7 +143,7 @@
                                 @endif
                             </div>
                             <div class="col-12">
-                                <x-admin.form-image-preview :required="false" />
+                                <x-admin.form-image-preview :required="false" :label="__('Image')" :image="$product->image" />
                             </div>
                         </div>
                     </div>

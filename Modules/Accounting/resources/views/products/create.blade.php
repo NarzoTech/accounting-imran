@@ -137,7 +137,7 @@
                     <div class="card-body">
                         <div class="row">
                             <div class="col-12">
-                                <x-admin.form-image-preview :required="false" />
+                                <x-admin.form-image-preview :required="false" :label="__('Image')" />
                             </div>
                         </div>
                     </div>

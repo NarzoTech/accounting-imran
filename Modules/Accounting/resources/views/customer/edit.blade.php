@@ -137,7 +137,8 @@
                         <h4 class="section_title">{{ __('Profile Image') }}</h4>
                     </div>
                     <div class="card-body">
-                        <x-admin.form-image-preview name="profile_image" :required="false" :image="asset('storage/' . $customer->profile_image)" />
+                        <x-admin.form-image-preview name="profile_image" :required="false" :image="asset($customer->profile_image)"
+                            :label="__('Profile Image')" />
                     </div>
                 </div>
 

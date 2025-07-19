@@ -7,6 +7,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Modules\Accounting\Models\Account;
 use Modules\Accounting\Models\AccountTransaction;
 use Modules\Accounting\Models\Container;
@@ -34,11 +35,11 @@ class InvoiceController extends Controller
                             ->orWhereDoesntHave('payments'); // Or no payments linked
                     } elseif ($status === 'partial') {
                         // Find invoices where total_amount > sum of payments and sum of payments > 0
-                        $q->whereRaw('invoices.total_amount > (SELECT SUM(amount) FROM invoice_payments WHERE invoice_id = invoices.id AND payment_type = "invoice_payment")')
-                            ->whereRaw('(SELECT SUM(amount) FROM invoice_payments WHERE invoice_id = invoices.id AND payment_type = "invoice_payment") > 0');
+                        $q->whereRaw('total_amount > (SELECT SUM(amount) FROM invoice_payments WHERE invoice_id = id AND payment_type = "invoice_payment")')
+                            ->whereRaw('(SELECT SUM(amount) FROM invoice_payments WHERE invoice_id = id AND payment_type = "invoice_payment") > 0');
                     } elseif ($status === 'paid') {
                         // Find invoices where total_amount <= sum of payments
-                        $q->whereRaw('invoices.total_amount <= (SELECT SUM(amount) FROM invoice_payments WHERE invoice_id = invoices.id AND payment_type = "invoice_payment")');
+                        $q->whereRaw('total_amount <= (SELECT SUM(amount) FROM invoice_payments WHERE invoice_id = invoices.id AND payment_type = "invoice_payment")');
                     } elseif ($status === 'overdue') {
                         // Overdue: payment_date is in the past AND not fully paid
                         $q->where('payment_date', '<', Carbon::today())
@@ -402,5 +403,43 @@ class InvoiceController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy($id) {}
+    public function destroy(Invoice $invoice)
+    {
+        try {
+            DB::transaction(function () use ($invoice) {
+                // 1. Reverse payments and account transactions associated with this invoice
+                foreach ($invoice->payments as $payment) {
+                    // Update account balance: subtract the amount that was added
+                    $account = $payment->account;
+                    if ($account) {
+                        $account->decrement('balance', $payment->amount);
+                    }
+
+                    // Delete the associated AccountTransaction
+                    AccountTransaction::where('account_id', $payment->account_id)
+                        ->where('type', 'invoice_payment')
+                        ->where('reference', 'LIKE', 'Invoice #' . $invoice->invoice_number . '%')
+                        ->where('amount', $payment->amount) // Add amount check for specificity
+                        ->delete();
+
+                    // Delete the InvoicePayment record itself
+                    $payment->delete();
+                }
+
+                $invoice->items()->delete();
+
+                // 3. Delete the invoice itself
+                $invoice->delete();
+            });
+
+            return redirect()->route('admin.invoice.index')->with([
+                'message' => 'Invoice deleted successfully.',
+                'alert-type' => 'success',
+            ]);
+        } catch (\Exception $e) {
+            // Log the error for debugging
+            Log::error('Error deleting invoice: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Failed to delete invoice. ' . $e->getMessage());
+        }
+    }
 }

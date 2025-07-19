@@ -141,25 +141,8 @@ class InvoicePaymentController extends Controller
                                 'payment_type' => 'invoice_payment',
                                 'method'       => $method,
                                 'note'         => $note,
-                                // Assuming your invoice_payments table does not have a 'payment_date' column directly.
-                                // If it does, you can add it here. Otherwise, the 'created_at' will serve as the payment timestamp.
-                                // If your InvoicePayment model has a 'payment_date' field, use it:
-                                // 'payment_date' => $paymentDate,
+
                             ]);
-
-                            // Optionally, update account balance if your account model has a method for it
-                            // $account = Account::find($accountId);
-                            // $account->balance += $amountToApply;
-                            // $account->save();
-
-                            // Also record in account_transactions
-                            // AccountTransaction::create([
-                            //     'account_id' => $accountId,
-                            //     'type'       => 'invoice_payment',
-                            //     'amount'     => $amountToApply,
-                            //     'reference'  => 'Invoice #' . $invoice->invoice_number,
-                            //     'note'       => $note,
-                            // ]);
 
                             $totalApplied += $amountToApply;
                         }
@@ -170,31 +153,15 @@ class InvoicePaymentController extends Controller
             // Handle any remaining amount as an advance payment if totalApplied is less than receivingAmount
             $remainingAmount = $receivingAmount - $totalApplied;
             if ($remainingAmount > 0) {
-                // Assuming you have an 'advance' payment_type in your invoice_payments table
-                // or a separate mechanism for advance payments on the Customer model.
-                // For simplicity, we'll add it to invoice_payments associated with customer, without specific invoice.
-                // You might need to adjust this based on your advance payment logic.
-                // This could also be a separate table for customer advances.
+
+                $customer = Customer::findOrFail($customerId);
                 $customer->payments()->create([
                     'account_id'   => $accountId,
                     'amount'       => $remainingAmount,
                     'payment_type' => 'advance', // Or 'advance_payment' as per your enum
                     'method'       => $method,
                     'note'         => $note ? $note . ' (Advance Payment)' : 'Advance Payment',
-                    // 'payment_date' => $paymentDate,
                 ]);
-
-                // Update account balance and record transaction for advance as well
-                // $account = Account::find($accountId);
-                // $account->balance += $remainingAmount;
-                // $account->save();
-                // AccountTransaction::create([
-                //     'account_id' => $accountId,
-                //     'type'       => 'advance_payment',
-                //     'amount'     => $remainingAmount,
-                //     'reference'  => 'Customer Advance: ' . $customer->name,
-                //     'note'       => $note,
-                // ]);
             }
 
             DB::commit();

@@ -15,6 +15,7 @@ class InvoicePayment extends Model
     protected $fillable = [
         'invoice_id',
         'account_id',
+        'customer_id',
         'amount',
         'payment_type',
         'method',
@@ -42,6 +43,6 @@ class InvoicePayment extends Model
      */
     public function customer()
     {
-        return $this->hasOneThrough(Customer::class, Invoice::class);
+        return $this->belongsTo(Customer::class);
     }
 }

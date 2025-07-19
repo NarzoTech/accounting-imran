@@ -13,13 +13,15 @@ return new class extends Migration
     {
         Schema::create('invoice_payments', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('invoice_id')->constrained()->onDelete('cascade');
+            $table->foreignId('invoice_id')->nullable()->constrained()->onDelete('cascade');
             $table->foreignId('account_id')->constrained()->onDelete('cascade');
+            $table->foreignId('customer_id')->nullable()->constrained('customers')->onDelete('cascade');
             $table->decimal('amount', 15, 2);
             $table->enum('payment_type', ['advance', 'invoice_payment']);
             $table->string('method')->nullable(); // cash, card, bKash, etc.
             $table->text('note')->nullable();
             $table->timestamps();
+            $table->index('customer_id');
         });
     }
 

@@ -61,7 +61,9 @@ class Customer extends Model
      */
     public function getTotalAdvancePaidAmountAttribute()
     {
-        return $this->invoicePayments()->where('payment_type', 'advance')->sum('amount');
+        $invoicePayments = $this->invoicePayments()->where('payment_type', 'advance')->sum('amount');
+        $totalAdvance = $this->payments()->where('payment_type', 'advance')->sum('amount');
+        return $invoicePayments + $totalAdvance;
     }
 
     /**
@@ -73,9 +75,6 @@ class Customer extends Model
         $totalPaid = $this->total_invoice_paid_amount;
         $totalAdvance = $this->total_advance_paid_amount;
 
-        // Balance = (Opening Balance + Total Invoiced) - (Total Invoice Payments + Total Advance Payments)
-        // A positive result means the customer owes money (due).
-        // A negative result means the customer has a credit/advance.
         return ($this->opening_balance + $totalInvoiced) - ($totalPaid + $totalAdvance);
     }
 
@@ -93,7 +92,12 @@ class Customer extends Model
      */
     public function getAdvanceAmountAttribute()
     {
-        $balance = $this->current_balance;
-        return $balance < 0 ? abs($balance) : 0;
+        $payments = $this->payments()->where('payment_type', 'advance')->sum('amount');
+        return $payments > 0 ? $payments : 0;
+    }
+
+    public function payments()
+    {
+        return $this->hasMany(InvoicePayment::class, 'customer_id');
     }
 }

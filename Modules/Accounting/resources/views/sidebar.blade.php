@@ -49,7 +49,7 @@
 </li>
 
 <li
-    class="menu-item {{ isRoute(['admin.income.*', 'admin.transfer.*', 'admin.expense.*', 'admin.investor.*', 'admin.investment.*', 'admin.repayment.*'], 'active open') }}">
+    class="menu-item {{ isRoute(['admin.income.*', 'admin.transfer.*', 'admin.expense.*', 'admin.investor.*', 'admin.investment.*', 'admin.repayment.*', 'admin.account.*'], 'active open') }}">
 
 
     <a href="javascript:void(0);" class="menu-link menu-toggle">

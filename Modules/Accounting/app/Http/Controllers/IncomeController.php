@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Modules\Accounting\Models\Account;
+use Modules\Accounting\Models\AccountTransaction;
 use Modules\Accounting\Models\Container;
 use Modules\Accounting\Models\Income;
 use Modules\Accounting\Models\Transaction;
@@ -85,21 +86,12 @@ class IncomeController extends Controller
         DB::transaction(
             function () use ($request, $income) {
 
-
-                $account = Account::find($request->account_id);
-                $account->balance += $request->amount;
-                $account->save();
-
-
-                Transaction::create([
+                AccountTransaction::create([
                     'account_id'   => $income->account_id,
-                    'type'         => 'income',
-                    'related_id'   => $income->id,
-                    'related_type' => 'income',
+                    'type'         => 'deposit', // Use 'deposit' as the type for income
                     'amount'       => $income->amount,
-                    'method'       => $income->payment_method,
+                    'reference'    => $income->reference ?? 'Income: ' . $income->title,
                     'note'         => $income->note ?? $income->title,
-                    'date'         => $income->date,
                 ]);
             }
         );
@@ -157,6 +149,8 @@ class IncomeController extends Controller
 
 
         $income = Income::findOrFail($id);
+        $oldAccountId = $income->account_id;
+        $oldAmount = $income->amount;
 
         if ($request->hasFile('attachment')) {
             if ($income->attachment) {
@@ -165,34 +159,27 @@ class IncomeController extends Controller
             $validatedData['attachment'] = file_upload($request->file('attachment'), 'uploads/files/', prefix: 'attachment');
         }
 
-        DB::transaction(
-            function () use ($validatedData, $income) {
 
-                $oldAccount = Account::find($income->account_id);
-                $oldAccount->balance -= $income->amount;
-                $oldAccount->save();
+        DB::transaction(
+            function () use ($income, $validatedData, $oldAccountId) {
+
 
                 $income->update($validatedData);
 
 
-                $newAccount = Account::find($income->account_id);
-                $newAccount->balance += $income->amount;
-                $newAccount->save();
+                AccountTransaction::where('account_id', $oldAccountId)
+                    ->where('type', 'deposit') // Assuming income is always a 'deposit' type
+                    ->where('reference', 'LIKE', 'Income #' . $income->id . ':%') // Match previous reference pattern
+                    ->delete();
 
-                // Update or create transaction
-                $transaction = Transaction::where('related_id', $income->id)
-                    ->where('related_type', 'income')
-                    ->first();
+                AccountTransaction::create([
+                    'account_id'   => $income->account_id, // Use the potentially new (updated) account ID
+                    'type'         => 'deposit',           // Still a 'deposit' type transaction
+                    'amount'       => $income->amount,     // Use the new (updated) amount
+                    'reference'    => 'Income #' . $income->id . ': ' . ($income->reference ?? $income->title), // Generate consistent reference
+                    'note'         => $income->note ?? $income->title,
 
-                if ($transaction) {
-                    $transaction->update([
-                        'account_id'   => $income->account_id,
-                        'amount'       => $income->amount,
-                        'method'       => $income->payment_method,
-                        'note'         => $income->note ?? $income->title,
-                        'date'         => $income->date,
-                    ]);
-                }
+                ]);
             }
         );
 
@@ -218,14 +205,11 @@ class IncomeController extends Controller
         DB::transaction(function () use ($id) {
             $income = Income::findOrFail($id);
 
-            // Deduct balance
-            $account = Account::find($income->account_id);
-            $account->balance -= $income->amount;
-            $account->save();
 
             // Delete related transaction
-            Transaction::where('related_id', $income->id)
-                ->where('related_type', 'income')
+            AccountTransaction::where('account_id', $income->account_id)
+                ->where('type', 'deposit') // Income transactions are recorded as 'deposit'
+                ->where('reference', 'LIKE', 'Income #' . $income->id . ':%')
                 ->delete();
 
             // Delete attachment

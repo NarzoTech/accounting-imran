@@ -22,11 +22,14 @@ class AccountController extends Controller
                 ->editColumn('balance', fn($row) => number_format($row->balance, 2))
                 ->addColumn('actions', function ($row) {
                     $editUrl = route('admin.account.edit', $row->id);
-                    $deleteUrl = route('admin.account.destroy', $row->id); // Assuming you want to use the delete button like in your example
+                    $deleteUrl = route('admin.account.destroy', $row->id);
+                    $transactionsUrl = route('admin.account.transactions', $row->id); // 
+
                     return '
-                        <a href="' . $editUrl . '" class="btn btn-primary btn-sm"><i class="fas fa-edit"></i></a>
-                        <button class="btn btn-danger btn-sm delete-account" onclick="deleteData(' . $row->id . ')"><i class="fas fa-trash"></i></button>
-                    ';
+                    <a href="' . $editUrl . '" class="btn btn-primary btn-sm"><i class="fas fa-edit"></i></a>
+                    <a href="' . $transactionsUrl . '" class="btn btn-info btn-sm" title="View Transactions"><i class="fas fa-list-alt"></i></a>
+                    <button class="btn btn-danger btn-sm delete-account" onclick="deleteData(' . $row->id . ')"><i class="fas fa-trash"></i></button>
+                ';
                 })
                 ->rawColumns(['actions'])
                 ->make(true);
@@ -119,6 +122,22 @@ class AccountController extends Controller
             $route = route('admin.account.edit', ['account' => $account->id]);
         }
         return redirect($route)->with($notification);
+    }
+
+    public function transactions(Account $account, Request $request)
+    {
+        if ($request->ajax()) {
+            $data = $account->transactions()->latest(); // Get transactions for this account, newest first
+            return DataTables::of($data)
+                ->addIndexColumn()
+                ->editColumn('type', fn($row) => ucwords(str_replace('_', ' ', $row->type))) // Format type
+                ->editColumn('amount', fn($row) => number_format($row->amount, 2)) // Format amount
+                ->editColumn('created_at', fn($row) => $row->created_at->format('Y-m-d H:i:s')) // Format date
+                ->make(true);
+        }
+
+        // Pass the account object to the view so its name can be displayed
+        return view('accounting::account.transactions', compact('account'));
     }
 
     /**

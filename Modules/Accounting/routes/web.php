@@ -21,6 +21,8 @@ Route::group(['as' => 'admin.', 'prefix' => 'admin', 'middleware' => ['auth:admi
     Route::resource('invoice', InvoiceController::class)->names('invoice');
     Route::resource('invoice_payments', InvoicePaymentController::class);
     Route::get('invoice-download/{id}', [InvoiceController::class, 'download'])->name('invoice.download');
+    Route::get('accounts/{account}/transactions', [AccountController::class, 'transactions'])->name('account.transactions');
+
     Route::get('invoice_payments/get-data', [InvoicePaymentController::class, 'getInvoicePayments'])->name('invoice_payments.get_data');
     Route::get('invoice_payments/get-outstanding-invoices', [InvoicePaymentController::class, 'getOutstandingInvoices'])->name('invoice_payments.get_outstanding_invoices');
     Route::resource('customer', CustomerController::class)->names('customer');

@@ -11,16 +11,40 @@ class Account extends Model
 
     /**
      * The attributes that are mass assignable.
+     * We remove 'balance' as it will be a calculated attribute.
      */
     protected $fillable = [
         'name',
         'type',
         'account_number',
         'provider',
-        'balance',
         'note'
-
     ];
+
+    /**
+     * Get the computed balance of the account.
+     * This sums all related transactions where amount is positive (income)
+     * and subtracts where amount is negative (expense/outgoing).
+     * Assuming positive amounts in AccountTransaction are income/deposits
+     * and negative amounts are expenses/withdrawals.
+     * Or, more accurately, sum based on transaction type if amount is always positive.
+     */
+    public function getBalanceAttribute($value)
+    {
+        // Re-calculate balance based on transactions if they are the source of truth.
+        // Sum deposits, invoice_payments, advance_payments, transfer_in
+        $incomes = $this->transactions()
+            ->whereIn('type', ['deposit', 'invoice_payment', 'advance_payment', 'transfer_in'])
+            ->sum('amount');
+
+        // Sum expenses, transfer_out
+        $expenses = $this->transactions()
+            ->whereIn('type', ['expense', 'transfer_out'])
+            ->sum('amount');
+
+        return $incomes - $expenses;
+    }
+
 
     public function transactions()
     {
@@ -29,15 +53,19 @@ class Account extends Model
 
     public function outgoingTransfers()
     {
+
         return $this->hasMany(AccountTransfer::class, 'from_account_id');
     }
 
     public function incomingTransfers()
     {
+
         return $this->hasMany(AccountTransfer::class, 'to_account_id');
     }
+
     public function payments()
     {
+
         return $this->hasMany(InvoicePayment::class);
     }
 }

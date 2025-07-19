@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Modules\Accounting\Models\Account;
+use Modules\Accounting\Models\AccountTransaction;
 use Modules\Accounting\Models\Container;
 use Modules\Accounting\Models\Expense;
 use Modules\Accounting\Models\Transaction;
@@ -36,9 +37,7 @@ class ExpenseController extends Controller
                     return \Carbon\Carbon::parse($expense->date)->format('Y-m-d');
                 })
                 ->addColumn('actions', function ($row) {
-                    $editUrl = route('admin.expenses.edit', $row->id);
-                    $deleteUrl = route('admin.expenses.destroy', $row->id);
-
+                    $editUrl = route('admin.expense.edit', $row->id);
                     return '
                         <a href="' . $editUrl . '" class="btn btn-primary btn-sm"><i class="fas fa-edit"></i></a>
                         <button class="btn btn-danger btn-sm delete-expense" onclick="deleteData(' . $row->id . ')"><i class="fas fa-trash"></i></button>
@@ -85,21 +84,14 @@ class ExpenseController extends Controller
 
         DB::transaction(
             function () use ($request, $expense) {
-                // Deduct balance from account
-                $account = Account::find($request->account_id);
-                $account->balance -= $request->amount;
-                $account->save();
 
                 // Create transaction
-                Transaction::create([
+                AccountTransaction::create([
                     'account_id'   => $expense->account_id,
-                    'type'         => 'expense',
+                    'type'         => 'expense', // Type for expenses
                     'amount'       => $expense->amount,
-                    'method'       => $expense->payment_method,
+                    'reference'    => 'Expense #' . $expense->id . ': ' . ($expense->reference ?? $expense->title), // Consistent reference
                     'note'         => $expense->note ?? $expense->title,
-                    'date'         => $expense->date,
-                    'related_id'   => $expense->id,
-                    'related_type' => 'expense',
                 ]);
             }
         );
@@ -168,36 +160,37 @@ class ExpenseController extends Controller
             $validatedData['attachment'] = file_upload($request->file('attachment'), 'uploads/files/', prefix: 'attachment');
         }
 
-        DB::transaction(function () use ($request, $id, $validatedData) {
-            $expense = Expense::findOrFail($id);
+        $oldAccountId = $expense->account_id;
+        if ($request->hasFile('attachment')) {
+            if ($expense->attachment) {
 
-            // Revert previous amount
-            $oldAccount = Account::find($expense->account_id);
-            $oldAccount->balance += $expense->amount;
-            $oldAccount->save();
+                file_delete($expense->attachment);
+            }
+            $validatedData['attachment'] = file_upload($request->file('attachment'), 'uploads/files/', prefix: 'attachment');
+        } else {
+
+            unset($validatedData['attachment']);
+        }
+        DB::transaction(function () use ($id, $validatedData, $oldAccountId) {
+            $expense = Expense::findOrFail($id);
 
             // Update expense
             $expense->update($validatedData);
 
-            // Deduct new amount
-            $newAccount = Account::find($expense->account_id);
-            $newAccount->balance -= $expense->amount;
-            $newAccount->save();
 
             // Update transaction
-            $transaction = Transaction::where('related_id', $expense->id)
-                ->where('related_type', 'expense')
-                ->first();
+            AccountTransaction::where('account_id', $oldAccountId)
+                ->where('type', 'expense')
+                ->where('reference', 'LIKE', 'Expense #' . $expense->id . ':%')
+                ->delete();
 
-            if ($transaction) {
-                $transaction->update([
-                    'account_id'   => $expense->account_id,
-                    'amount'       => $expense->amount,
-                    'method'       => $expense->payment_method,
-                    'note'         => $expense->note ?? $expense->title,
-                    'date'         => $expense->date,
-                ]);
-            }
+            AccountTransaction::create([
+                'account_id'   => $expense->account_id, // Use the new (potentially updated) account ID
+                'type'         => 'expense',            // Still an expense
+                'amount'       => $expense->amount,     // Use the new (updated) amount
+                'reference'    => 'Expense #' . $expense->id . ': ' . ($expense->reference ?? $expense->title),
+                'note'         => $expense->note ?? $expense->title,
+            ]);
         });
 
 
@@ -224,14 +217,10 @@ class ExpenseController extends Controller
         DB::transaction(function () use ($id) {
             $expense = Expense::findOrFail($id);
 
-            // Add back the expense to account balance
-            $account = Account::find($expense->account_id);
-            $account->balance += $expense->amount;
-            $account->save();
-
             // Delete related transaction
-            Transaction::where('related_id', $expense->id)
-                ->where('related_type', 'expense')
+            AccountTransaction::where('account_id', $expense->account_id)
+                ->where('type', 'expense') // Expense transactions are recorded as 'expense'
+                ->where('reference', 'LIKE', 'Expense #' . $expense->id . ':%')
                 ->delete();
 
             // Delete the attachment if exists

@@ -159,6 +159,17 @@ class IncomeController extends Controller
             $validatedData['attachment'] = file_upload($request->file('attachment'), 'uploads/files/', prefix: 'attachment');
         }
 
+        if ($request->hasFile('attachment')) {
+            if ($income->attachment) {
+
+                file_delete($income->attachment);
+            }
+            $validatedData['attachment'] = file_upload($request->file('attachment'), 'uploads/files/', prefix: 'attachment');
+        } else {
+
+            unset($validatedData['attachment']);
+        }
+
 
         DB::transaction(
             function () use ($income, $validatedData, $oldAccountId) {

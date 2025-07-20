@@ -27,4 +27,10 @@ class Container extends Model
         'bank_name',
         'attachment',
     ];
+
+    protected $casts = [
+        'estimated_departure' => 'datetime',
+        'estimated_arrival' => 'datetime',
+        'actual_arrival' => 'datetime',
+    ];
 }

@@ -19,6 +19,7 @@ return new class extends Migration
             $table->string('phone')->nullable()->comment('Customer phone number');
             $table->string('first_name')->nullable()->comment('First name if customer is a person');
             $table->string('last_name')->nullable()->comment('Last name if customer is a person');
+            $table->string('profile_image')->nullable()->comment('');
             $table->decimal('opening_balance', 15, 2)->default(0.00)->comment('Initial balance for the customer');
             $table->date('opening_balance_as_of')->nullable()->comment('Date as of which the opening balance is recorded');
 

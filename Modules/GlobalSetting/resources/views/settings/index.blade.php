@@ -53,6 +53,24 @@
                                             </div>
                                         </div>
                                     </div>
+                                    <div class="row">
+                                        <div class="col-12">
+                                            <div class="form-group">
+                                                <x-admin.form-input id="invoice_start" name="invoice_start"
+                                                    label="{{ __('Invoice Start') }}"
+                                                    value="{{ $setting->invoice_start }}" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-12">
+                                            <div class="form-group">
+                                                <x-admin.form-input id="invoice_prefix" name="invoice_prefix"
+                                                    label="{{ __('Invoice Prefix') }}"
+                                                    value="{{ $setting->invoice_prefix }}" />
+                                            </div>
+                                        </div>
+                                    </div>
 
                                     <div class="col-12">
                                         <div class="form-group">

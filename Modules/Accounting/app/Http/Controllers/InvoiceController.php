@@ -121,7 +121,21 @@ class InvoiceController extends Controller
         $products = Product::where('status', 1)->get();
         $customers = Customer::get();
         $accounts = Account::all();
-        return view('accounting::invoice.create', compact('containers', 'products', 'customers', 'accounts'));
+
+        $setting = cache('setting');
+
+        // generate dynamic invoice number
+        $invoiceStart = $setting->invoice_start ?? '0001';
+        $invoicePrefix = $setting->invoice_prefix ?? 'INV-';
+        $latestInvoice = Invoice::where('invoice_number', 'like', $invoicePrefix . '%')
+            ->orderBy('id', 'desc')
+            ->first();
+        $invoiceNumber = $latestInvoice ? intval(substr($latestInvoice->invoice_number, strlen($invoicePrefix))) + 1 : intval($invoiceStart);
+        $invoiceNumber = str_pad($invoiceNumber, strlen($invoiceStart), '0', STR_PAD_LEFT);
+        $invoiceNumber = $invoicePrefix . $invoiceNumber;
+
+
+        return view('accounting::invoice.create', compact('containers', 'products', 'customers', 'accounts', 'invoiceNumber'));
     }
 
     /**
@@ -333,6 +347,17 @@ class InvoiceController extends Controller
         $initialPaymentStatus = $invoice->payment_status; // 'Paid', 'Partially Paid', 'Unpaid'
         $initialAmountPaid = $invoice->amount_paid;
 
+        // Generate dynamic invoice number if not already set
+        $setting = cache('setting');
+        $invoiceStart = $setting->invoice_start ?? '0001';
+        $invoicePrefix = $setting->invoice_prefix ?? 'INV-';
+        $latestInvoice = Invoice::where('invoice_number', 'like', $invoicePrefix . '%')
+            ->orderBy('id', 'desc')
+            ->first();
+        $invoiceNumber = $latestInvoice ? intval(substr($latestInvoice->invoice_number, strlen($invoicePrefix))) + 1 : intval($invoiceStart);
+        $invoiceNumber = str_pad($invoiceNumber, strlen($invoiceStart), '0', STR_PAD_LEFT);
+        $invoiceNumber = $invoicePrefix . $invoiceNumber;
+
         return view('accounting::invoice.edit', compact(
             'invoice',
             'customers',
@@ -340,7 +365,8 @@ class InvoiceController extends Controller
             'containers',
             'accounts',
             'initialPaymentStatus',
-            'initialAmountPaid'
+            'initialAmountPaid',
+            'invoiceNumber'
         ));
     }
 

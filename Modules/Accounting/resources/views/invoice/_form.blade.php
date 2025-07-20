@@ -53,7 +53,8 @@
                                 class="col-sm-5 col-form-label">{{ __('Invoice Number') }}</label>
                             <div class="col-sm-7">
                                 <input type="text" class="form-control" id="invoiceNumber" name="invoice_number"
-                                    value="{{ old('invoice_number', $invoice->invoice_number ?? '') }}" required>
+                                    value="{{ old('invoice_number', $invoice->invoice_number ?? $invoiceNumber) }}"
+                                    required>
                             </div>
                         </div>
                         <div class="row mb-3 align-items-center">

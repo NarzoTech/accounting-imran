@@ -5,7 +5,7 @@ namespace Modules\Accounting\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
-class AccountTransaction extends Model
+class CustomerAdvance extends Model
 {
     use HasFactory;
 
@@ -13,20 +13,21 @@ class AccountTransaction extends Model
      * The attributes that are mass assignable.
      */
     protected $fillable = [
-        'account_id',
         'customer_id',
-        'type',
         'amount',
-        'reference',
-        'note',
+        'type',
+        'related_invoice_id',
+        'account_id',
+        'note'
     ];
 
-    public function account()
+    public function customer()
     {
-        return $this->belongsTo(Account::class);
+        return $this->belongsTo(Customer::class);
     }
-    public function transaction()
+
+    public function invoice()
     {
-        return $this->belongsTo(Customer::class, 'customer_id');
+        return $this->belongsTo(Invoice::class, 'related_invoice_id');
     }
 }

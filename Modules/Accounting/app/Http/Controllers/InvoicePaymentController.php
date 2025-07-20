@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\DB;
 use Modules\Accounting\Models\Account;
 use Modules\Accounting\Models\AccountTransaction;
 use Modules\Accounting\Models\Customer;
+use Modules\Accounting\Models\CustomerAdvance;
 use Modules\Accounting\Models\Invoice;
 use Modules\Accounting\Models\InvoicePayment;
 use Yajra\DataTables\Facades\DataTables;
@@ -116,8 +117,8 @@ class InvoicePaymentController extends Controller
         $accountId = $request->input('account_id');
         $paymentDate = \Carbon\Carbon::createFromFormat('d-m-Y', $request->input('payment_date'))->format('Y-m-d');
         $appliedAmounts = $request->input('amounts', []);
-        $method = $request->input('method'); // assuming 'method' input is also present as in your original form
-        $note = $request->input('note'); // assuming 'note' input is also present
+        $method = $request->input('method');
+        $note = $request->input('note');
 
 
         DB::beginTransaction();
@@ -144,6 +145,14 @@ class InvoicePaymentController extends Controller
 
                             ]);
 
+                            AccountTransaction::create([
+                                'account_id' => $accountId,
+                                'type'       => 'invoice_payment',
+                                'amount'     => $amountToApply,
+                                'reference'  => 'Invoice #' . $invoice->invoice_number,
+                                'note'       => 'Due Payment applied to invoice.',
+                            ]);
+
                             $totalApplied += $amountToApply;
                         }
                     }
@@ -155,12 +164,12 @@ class InvoicePaymentController extends Controller
             if ($remainingAmount > 0) {
 
                 $customer = Customer::findOrFail($customerId);
-                $customer->payments()->create([
-                    'account_id'   => $accountId,
-                    'amount'       => $remainingAmount,
-                    'payment_type' => 'advance', // Or 'advance_payment' as per your enum
-                    'method'       => $method,
-                    'note'         => $note ? $note . ' (Advance Payment)' : 'Advance Payment',
+
+                $customer->advances()->create([
+                    'amount' => $remainingAmount,
+                    'type' => 'received',
+                    'account_id' => $accountId,
+                    'note' => $note ? $note . ' (Advance Payment)' : 'Advance Payment',
                 ]);
             }
 
@@ -200,69 +209,118 @@ class InvoicePaymentController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, $id)
+    public function update(Request $request, InvoicePayment $payment)
     {
-        $validatedData = $request->validate([
-            'customer_id' => 'required|exists:customers,id', // Customer ID is needed for context but not directly updated on InvoicePayment
-            'amount' => 'required|numeric|min:0.01',
-            'account_id' => 'required|exists:accounts,id',
-            'method' => 'nullable|string|max:255',
-            'note' => 'nullable|string',
-            // invoice_ids are not directly updated on an existing InvoicePayment record if it's a single entry.
-            // If you allow changing which invoices a payment applies to, this logic becomes much more complex.
+        $request->validate([
+            'customer_id'       => 'required|exists:customers,id',
+            'receiving_amount'  => 'required|numeric|min:0.01',
+            'account_id'        => 'required|exists:accounts,id',
+            'payment_date'      => 'required|date_format:d-m-Y',
+            'amounts'           => 'nullable|array',
+            'amounts.*'         => 'numeric|min:0',
         ]);
 
-        $invoicePayment = InvoicePayment::findOrFail($id);
-        DB::transaction(function () use ($validatedData, $invoicePayment) {
-            $oldAmount = $invoicePayment->amount;
-            $oldAccountId = $invoicePayment->account_id;
+        $customerId = $request->input('customer_id');
+        $receivingAmount = (float) $request->input('receiving_amount');
+        $accountId = $request->input('account_id');
+        $paymentDate = \Carbon\Carbon::createFromFormat('d-m-Y', $request->input('payment_date'))->format('Y-m-d');
+        $appliedAmounts = $request->input('amounts', []);
+        $method = $request->input('method');
+        $note = $request->input('note');
 
-            // Revert old transaction and account balance
-            $oldAccount = Account::find($oldAccountId);
-            $oldAccount->decrement('balance', $oldAmount);
+        DB::beginTransaction();
 
-            // Find and update the corresponding AccountTransaction (if you track them one-to-one)
-            // This assumes a simple update where the original transaction is modified.
-            // For more robust systems, you might create new debit/credit entries to adjust.
-            $accountTransaction = AccountTransaction::where('account_id', $oldAccountId)
-                ->where('amount', $oldAmount)
-                ->where('type', $invoicePayment->payment_type == 'invoice_payment' ? 'invoice_payment' : 'advance_payment')
-                ->latest() // Get the most recent one
-                ->first();
+        try {
+            // 1. Reverse previous payments related to this InvoicePayment (assumes you track them)
+            $relatedPayments = InvoicePayment::where('group_id', $payment->group_id)->get(); // assuming group_id groups a payment set
 
-            if ($accountTransaction) {
-                $accountTransaction->update([
-                    'amount' => $validatedData['amount'],
-                    'account_id' => $validatedData['account_id'],
-                    'note' => $validatedData['note'],
-                ]);
-            } else {
-                // If no matching transaction found (e.g., if initial transaction was grouped), create a new one
-                AccountTransaction::create([
-                    'account_id' => $validatedData['account_id'],
-                    'type' => $invoicePayment->payment_type == 'invoice_payment' ? 'invoice_payment' : 'advance_payment',
-                    'amount' => $validatedData['amount'],
-                    'reference' => 'Payment adjustment for ' . ($invoicePayment->invoice->customer->name ?? 'N/A'),
-                    'note' => $validatedData['note'],
+            foreach ($relatedPayments as $relPayment) {
+                // Delete related AccountTransaction
+                AccountTransaction::where([
+                    'account_id' => $relPayment->account_id,
+                    'amount' => $relPayment->amount,
+                    'reference' => 'Invoice #' . $relPayment->invoice->invoice_number ?? '',
+                ])->delete();
+
+                $relPayment->delete();
+            }
+
+            // 2. Remove any associated CustomerAdvance if created during previous update
+            CustomerAdvance::where([
+                'customer_id' => $customerId,
+                'type' => 'received',
+                'note' => 'Advance Payment',
+            ])->delete();
+
+            // 3. Reapply payments based on new input
+            $totalApplied = 0;
+            $groupId = uniqid('pay_'); // new group ID for this update set
+
+            foreach ($appliedAmounts as $invoiceId => $amount) {
+                $amount = (float) $amount;
+                if ($amount > 0) {
+                    $invoice = Invoice::find($invoiceId);
+                    if ($invoice) {
+                        $dueBeforePayment = $invoice->amount_due;
+                        $amountToApply = min($amount, $dueBeforePayment);
+
+                        if ($amountToApply > 0) {
+                            $invoice->payments()->create([
+                                'group_id'     => $groupId,
+                                'account_id'   => $accountId,
+                                'amount'       => $amountToApply,
+                                'payment_type' => 'invoice_payment',
+                                'method'       => $method,
+                                'note'         => $note,
+                                'payment_date' => $paymentDate,
+                            ]);
+
+                            AccountTransaction::create([
+                                'account_id' => $accountId,
+                                'type'       => 'invoice_payment',
+                                'amount'     => $amountToApply,
+                                'reference'  => 'Invoice #' . $invoice->invoice_number,
+                                'note'       => 'Due Payment applied to invoice.',
+                                'transaction_date' => $paymentDate,
+                            ]);
+
+                            $totalApplied += $amountToApply;
+                        }
+                    }
+                }
+            }
+
+            // 4. Handle remaining as advance (if any)
+            $remainingAmount = $receivingAmount - $totalApplied;
+
+            if ($remainingAmount > 0) {
+                $customer = Customer::findOrFail($customerId);
+
+                $customer->advances()->create([
+                    'amount'      => $remainingAmount,
+                    'type'        => 'received',
+                    'account_id'  => $accountId,
+                    'note'        => $note ? $note . ' (Advance Payment)' : 'Advance Payment',
+                    'created_at'  => $paymentDate,
                 ]);
             }
 
+            DB::commit();
 
-            // Update the InvoicePayment record
-            $invoicePayment->update([
-                'account_id' => $validatedData['account_id'],
-                'amount' => $validatedData['amount'],
-                'method' => $validatedData['method'],
-                'note' => $validatedData['note'],
-                // payment_type and invoice_id are usually fixed after creation for a specific payment record.
-                // If you need to change these, it's a much more involved process.
+            return redirect()->route('admin.customer.index')->with([
+                'message'    => __('Payment updated successfully!'),
+                'alert-type' => 'success'
             ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
 
-            // Apply new transaction and account balance
-            $newAccount = Account::find($validatedData['account_id']);
-            $newAccount->increment('balance', $validatedData['amount']);
-        });
+            return back()->withInput()->with([
+                'message'    => __('Failed to update payment: ') . $e->getMessage(),
+                'alert-type' => 'error'
+            ]);
+        }
     }
+
 
     /**
      * Remove the specified resource from storage.

@@ -19,6 +19,7 @@ class InvoicePayment extends Model
         'amount',
         'payment_type',
         'method',
+        'group_id',
         'note',
     ];
 

@@ -5,6 +5,7 @@ namespace Modules\Accounting\Http\Controllers;
 use App\Http\Controllers\Controller;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -12,6 +13,8 @@ use Modules\Accounting\Models\Account;
 use Modules\Accounting\Models\AccountTransaction;
 use Modules\Accounting\Models\Container;
 use Modules\Accounting\Models\Customer;
+use Modules\Accounting\Models\CustomerAdvance;
+use Modules\Accounting\Models\CustomerAdvanceUsage;
 use Modules\Accounting\Models\Invoice;
 use Modules\Accounting\Models\Product;
 use Yajra\DataTables\Facades\DataTables;
@@ -152,62 +155,125 @@ class InvoiceController extends Controller
         ]);
 
         DB::transaction(function () use ($request, $validatedData) {
+            DB::beginTransaction();
             // Calculate subtotal and total amount based on items
-            $subtotal = 0;
-            foreach ($validatedData['items'] as $item) {
-                $subtotal += $item['quantity'] * $item['price'];
-            }
+            $subtotal = collect($validatedData['items'])->sum(fn($item) => $item['quantity'] * $item['price']);
+
 
             $discountAmount = ($subtotal * ($validatedData['discount_percentage'] ?? 0) / 100);
             $deliveryCharge = $validatedData['delivery_charge'] ?? 0;
             $totalAmount = $subtotal - $discountAmount + $deliveryCharge;
 
-            $invoice = Invoice::create([
-                'customer_id'         => $validatedData['customer_id'],
-                'invoice_number'      => $validatedData['invoice_number'],
-                'po_so_number'        => $validatedData['po_so_number'],
-                'invoice_date'        => $validatedData['invoice_date'],
-                'payment_date'        => $validatedData['payment_date'],
-                'container_id'        => $validatedData['container_id'],
-                'discount_percentage' => $validatedData['discount_percentage'] ?? 0,
-                'delivery_charge'     => $deliveryCharge,
-                'subtotal'            => $subtotal,
-                'total_amount'        => $totalAmount,
-                'notes_terms'         => $validatedData['notes_terms'],
-                'invoice_footer'      => $validatedData['invoice_footer'],
-            ]);
-
-            // Save invoice items
-            foreach ($validatedData['items'] as $itemData) {
-                $invoice->items()->create($itemData);
-            }
-
-            // Handle payment if status is 'paid'
-            if ($validatedData['payment_status_input'] === 'paid' && ($validatedData['amount_paid'] ?? 0) > 0) {
-                $paymentAmount = $validatedData['amount_paid'];
-                $paymentAccountId = $validatedData['payment_account_id'];
-
-                // Create InvoicePayment record
-                $invoice->payments()->create([
-                    'account_id'   => $paymentAccountId,
-                    'amount'       => $paymentAmount,
-                    'payment_type' => 'invoice_payment', // Always invoice_payment for creation
-                    'method'       => $request->input('payment_method_text'), // Get method from a text input
-                    'note'         => 'Payment received during invoice creation.',
+            try {
+                $invoice = Invoice::create([
+                    'customer_id'         => $validatedData['customer_id'],
+                    'invoice_number'      => $validatedData['invoice_number'],
+                    'po_so_number'        => $validatedData['po_so_number'],
+                    'invoice_date'        => $validatedData['invoice_date'],
+                    'payment_date'        => $validatedData['payment_date'],
+                    'container_id'        => $validatedData['container_id'],
+                    'discount_percentage' => $validatedData['discount_percentage'] ?? 0,
+                    'delivery_charge'     => $deliveryCharge,
+                    'subtotal'            => $subtotal,
+                    'total_amount'        => $totalAmount,
+                    'notes_terms'         => $validatedData['notes_terms'],
+                    'invoice_footer'      => $validatedData['invoice_footer'],
                 ]);
 
-                // Update Account balance
-                $account = Account::find($paymentAccountId);
-                $account->increment('balance', $paymentAmount);
+                // Save invoice items
+                foreach ($validatedData['items'] as $itemData) {
+                    $invoice->items()->create($itemData);
+                }
 
-                // Record AccountTransaction
-                AccountTransaction::create([ // Ensure correct namespace for AccountTransaction
-                    'account_id' => $paymentAccountId,
-                    'type'       => 'invoice_payment',
-                    'amount'     => $paymentAmount,
-                    'reference'  => 'Invoice #' . $invoice->invoice_number,
-                    'note'       => 'Payment received for invoice creation.',
-                ]);
+
+                $customerId = $validatedData['customer_id'];
+                $customer = Customer::findOrFail($validatedData['customer_id']);
+                $remainingToPay = $totalAmount;
+                $totalAdvanceUsed = 0;
+
+                $advances = CustomerAdvance::where('customer_id', $customerId)
+                    ->where('type', 'received')
+                    ->whereRaw('amount > (
+                        SELECT COALESCE(SUM(used_amount), 0)
+                        FROM customer_advance_usages
+                        WHERE customer_advance_usages.customer_advance_id = customer_advances.id
+                    )')
+                    ->orderBy('created_at')
+                    ->get();
+
+
+                foreach ($advances as $advance) {
+                    if ($remainingToPay <= 0) break;
+
+                    $usedAmount = CustomerAdvanceUsage::where('customer_advance_id', $advance->id)->sum('used_amount');
+                    $available = $advance->amount - $usedAmount;
+
+                    $applyAmount = min($remainingToPay, $available);
+
+                    if ($applyAmount <= 0) continue;
+
+                    CustomerAdvanceUsage::create([
+                        'customer_advance_id' => $advance->id,
+                        'invoice_id'          => $invoice->id,
+                        'used_amount'         => $applyAmount,
+                    ]);
+
+                    CustomerAdvance::create([
+                        'customer_id'         => $customerId,
+                        'amount'              => -$applyAmount,
+                        'type'                => 'used',
+                        'account_id'          => $advance->account_id,
+                        'related_invoice_id'  => $invoice->id,
+                        'note'                => 'Advance applied to Invoice #' . $invoice->invoice_number,
+                    ]);
+
+                    $invoice->payments()->create([
+                        'account_id'   => $advance->account_id,
+                        'amount'       => $applyAmount,
+                        'payment_type' => 'invoice_payment',
+                        'method'       => 'Advance Applied',
+                        'note'         => 'Advance payment applied to invoice #' . $invoice->invoice_number,
+                    ]);
+
+                    AccountTransaction::create([
+                        'account_id' => $advance->account_id,
+                        'type'       => 'invoice_payment',
+                        'amount'     => $applyAmount,
+                        'reference'  => 'Invoice #' . $invoice->invoice_number,
+                        'note'       => 'Advance applied to invoice.',
+                    ]);
+                }
+
+                $paymentAmount = 0;
+
+                // Handle payment if status is 'paid'
+                if ($validatedData['payment_status_input'] === 'paid' && ($validatedData['amount_paid'] ?? 0) > 0) {
+                    $paymentAmount = $validatedData['amount_paid'];
+                    $paymentAccountId = $validatedData['payment_account_id'];
+
+                    // Create InvoicePayment record
+                    $invoice->payments()->create([
+                        'account_id'   => $paymentAccountId,
+                        'amount'       => $paymentAmount,
+                        'payment_type' => 'invoice_payment', // Always invoice_payment for creation
+                        'method'       => $request->input('payment_method_text'), // Get method from a text input
+                        'note'         => 'Payment received during invoice creation.',
+                    ]);
+
+                    // Record AccountTransaction
+                    AccountTransaction::create([
+                        'account_id' => $paymentAccountId,
+                        'type'       => 'invoice_payment',
+                        'amount'     => $paymentAmount,
+                        'reference'  => 'Invoice #' . $invoice->invoice_number,
+                        'note'       => 'Payment received for invoice creation.',
+                    ]);
+                }
+
+                DB::commit();
+            } catch (Exception $e) {
+                DB::rollBack();
+                return redirect()->back()->with('error', $e->getMessage());
             }
         });
 
@@ -283,10 +349,9 @@ class InvoiceController extends Controller
      */
     public function update(Request $request, Invoice $invoice)
     {
-        // Validation rules (adjust as per your exact requirements)
         $validatedData = $request->validate([
             'customer_id'         => 'required|exists:customers,id',
-            'invoice_number'      => 'required|string|max:255|unique:invoices,invoice_number,' . $invoice->id, // Unique except for self
+            'invoice_number'      => 'required|string|max:255|unique:invoices,invoice_number,' . $invoice->id,
             'po_so_number'        => 'nullable|string|max:255',
             'invoice_date'        => 'required|date',
             'payment_date'        => 'required|date|after_or_equal:invoice_date',
@@ -296,101 +361,157 @@ class InvoiceController extends Controller
             'notes_terms'         => 'nullable|string',
             'invoice_footer'      => 'nullable|string',
             'items'               => 'required|array|min:1',
-            'items.*.item_id'     => 'nullable|exists:invoice_items,id', // Existing item ID
             'items.*.product_id'  => 'nullable|exists:products,id',
             'items.*.description' => 'nullable|string',
             'items.*.quantity'    => 'required|integer|min:1',
             'items.*.unit'        => 'nullable|string|max:30',
             'items.*.price'       => 'required|numeric|min:0',
             'items.*.amount'      => 'required|numeric|min:0',
-            'items_to_delete'     => 'nullable|array', // IDs of items to delete
-            'items_to_delete.*'   => 'exists:invoice_items,id',
 
             'payment_status_input' => 'required|in:unpaid,paid',
             'payment_account_id'   => 'nullable|required_if:payment_status_input,paid|exists:accounts,id',
-            'amount_paid' => 'nullable|numeric|min:0', // This is amount paid on THIS update
+            'amount_paid'          => 'nullable|numeric|min:0',
         ]);
 
         DB::transaction(function () use ($request, $validatedData, $invoice) {
-            // Calculate subtotal and total amount based on items
-            $subtotal = 0;
-            foreach ($validatedData['items'] as $item) {
-                $subtotal += $item['quantity'] * $item['price'];
-            }
+            DB::beginTransaction();
 
-            $discountAmount = ($subtotal * ($validatedData['discount_percentage'] ?? 0) / 100);
-            $deliveryCharge = $validatedData['delivery_charge'] ?? 0;
-            $totalAmount = $subtotal - $discountAmount + $deliveryCharge;
+            try {
+                $subtotal = collect($validatedData['items'])->sum(fn($item) => $item['quantity'] * $item['price']);
+                $discountAmount = ($subtotal * ($validatedData['discount_percentage'] ?? 0) / 100);
+                $deliveryCharge = $validatedData['delivery_charge'] ?? 0;
+                $totalAmount = $subtotal - $discountAmount + $deliveryCharge;
 
-            // Update invoice core details
-            $invoice->update([
-                'customer_id'         => $validatedData['customer_id'],
-                'invoice_number'      => $validatedData['invoice_number'],
-                'po_so_number'        => $validatedData['po_so_number'],
-                'invoice_date'        => $validatedData['invoice_date'],
-                'payment_date'        => $validatedData['payment_date'],
-                'container_id'        => $validatedData['container_id'],
-                'discount_percentage' => $validatedData['discount_percentage'] ?? 0,
-                'delivery_charge'     => $deliveryCharge,
-                'subtotal'            => $subtotal,
-                'total_amount'        => $totalAmount,
-                'notes_terms'         => $validatedData['notes_terms'],
-                'invoice_footer'      => $validatedData['invoice_footer'],
-            ]);
+                // Update invoice
+                $invoice->update([
+                    'customer_id'         => $validatedData['customer_id'],
+                    'invoice_number'      => $validatedData['invoice_number'],
+                    'po_so_number'        => $validatedData['po_so_number'],
+                    'invoice_date'        => $validatedData['invoice_date'],
+                    'payment_date'        => $validatedData['payment_date'],
+                    'container_id'        => $validatedData['container_id'],
+                    'discount_percentage' => $validatedData['discount_percentage'] ?? 0,
+                    'delivery_charge'     => $deliveryCharge,
+                    'subtotal'            => $subtotal,
+                    'total_amount'        => $totalAmount,
+                    'notes_terms'         => $validatedData['notes_terms'],
+                    'invoice_footer'      => $validatedData['invoice_footer'],
+                ]);
 
-            // Handle invoice items update/create/delete
-            $existingItemIds = $invoice->items->pluck('id')->toArray();
-            $itemsToKeep = [];
+                // Remove previous items
+                $invoice->items()->delete();
 
-            foreach ($validatedData['items'] as $itemData) {
-                if (isset($itemData['item_id']) && in_array($itemData['item_id'], $existingItemIds)) {
-                    // Update existing item
-                    $idToUpdate = $itemData['item_id'];
-                    unset($itemData['item_id']);
-
-                    $invoice->items()->where('id', $idToUpdate)->update($itemData);
-                    $itemsToKeep[] = $idToUpdate;
-                } else {
-                    // Create new item
+                // Add updated items
+                foreach ($validatedData['items'] as $itemData) {
                     $invoice->items()->create($itemData);
                 }
-            }
 
-            // Delete items not in the submitted list
-            $itemsToDelete = array_diff($existingItemIds, $itemsToKeep);
-            if (!empty($itemsToDelete)) {
-                $invoice->items()->whereIn('id', $itemsToDelete)->delete();
-            }
+                // Rollback previously used advances
+                $usedAdvances = CustomerAdvanceUsage::where('invoice_id', $invoice->id)->get();
 
-            $currentPaymentStatus = $invoice->payment_status; // Get status BEFORE this update
-            $newPaymentStatusInput = $validatedData['payment_status_input'];
-            $amountPaidOnUpdate = $validatedData['amount_paid'] ?? 0;
+                foreach ($usedAdvances as $usage) {
+                    $advance = CustomerAdvance::find($usage->customer_advance_id);
 
-            // If invoice was previously unpaid/partial and is now marked as paid with an amount
-            if ($amountPaidOnUpdate > 0) {
+                    // Remove record for negative (used) advance entry
+                    CustomerAdvance::where([
+                        'customer_id' => $invoice->customer_id,
+                        'type' => 'used',
+                        'related_invoice_id' => $invoice->id,
+                        'account_id' => $advance->account_id,
+                        'amount' => -$usage->used_amount
+                    ])->delete();
 
-                $paymentAccountId = $validatedData['payment_account_id'];
+                    $usage->delete();
+                }
 
-                $invoice->payments()->create([
-                    'account_id'   => $paymentAccountId,
-                    'amount'       => $amountPaidOnUpdate,
-                    'payment_type' => 'invoice_payment',
-                    'method'       => $request->input('payment_method_text_update'), // Get method from a text input
-                    'note'         => 'Payment received during invoice update.',
-                ]);
+                // Remove previous payments
+                $invoice->payments()->delete();
 
-                // Update Account balance
-                $account = Account::find($paymentAccountId);
-                $account->increment('balance', $amountPaidOnUpdate);
+                // Remove previous account transactions
+                AccountTransaction::where('reference', 'Invoice #' . $invoice->invoice_number)->delete();
 
-                // Record AccountTransaction
-                AccountTransaction::create([
-                    'account_id' => $paymentAccountId,
-                    'type'       => 'invoice_payment',
-                    'amount'     => $amountPaidOnUpdate,
-                    'reference'  => 'Invoice #' . $invoice->invoice_number . ' (Update)',
-                    'note'       => 'Payment received for invoice update.',
-                ]);
+                // Re-apply advance payments
+                $remainingToPay = $totalAmount;
+                $customerId = $validatedData['customer_id'];
+                $advances = CustomerAdvance::where('customer_id', $customerId)
+                    ->where('type', 'received')
+                    ->whereRaw('amount > (
+                    SELECT COALESCE(SUM(used_amount), 0)
+                    FROM customer_advance_usages
+                    WHERE customer_advance_usages.customer_advance_id = customer_advances.id
+                )')
+                    ->orderBy('created_at')
+                    ->get();
+
+                foreach ($advances as $advance) {
+                    if ($remainingToPay <= 0) break;
+
+                    $usedAmount = CustomerAdvanceUsage::where('customer_advance_id', $advance->id)->sum('used_amount');
+                    $available = $advance->amount - $usedAmount;
+
+                    $applyAmount = min($remainingToPay, $available);
+                    if ($applyAmount <= 0) continue;
+
+                    CustomerAdvanceUsage::create([
+                        'customer_advance_id' => $advance->id,
+                        'invoice_id'          => $invoice->id,
+                        'used_amount'         => $applyAmount,
+                    ]);
+
+                    CustomerAdvance::create([
+                        'customer_id'         => $customerId,
+                        'amount'              => -$applyAmount,
+                        'type'                => 'used',
+                        'account_id'          => $advance->account_id,
+                        'related_invoice_id'  => $invoice->id,
+                        'note'                => 'Advance applied to Invoice #' . $invoice->invoice_number,
+                    ]);
+
+                    $invoice->payments()->create([
+                        'account_id'   => $advance->account_id,
+                        'amount'       => $applyAmount,
+                        'payment_type' => 'invoice_payment',
+                        'method'       => 'Advance Applied',
+                        'note'         => 'Advance payment applied to invoice #' . $invoice->invoice_number,
+                    ]);
+
+                    AccountTransaction::create([
+                        'account_id' => $advance->account_id,
+                        'type'       => 'invoice_payment',
+                        'amount'     => $applyAmount,
+                        'reference'  => 'Invoice #' . $invoice->invoice_number,
+                        'note'       => 'Advance applied to invoice.',
+                    ]);
+
+                    $remainingToPay -= $applyAmount;
+                }
+
+                // Re-apply direct payment (if any)
+                if ($validatedData['payment_status_input'] === 'paid' && ($validatedData['amount_paid'] ?? 0) > 0) {
+                    $paymentAmount = $validatedData['amount_paid'];
+                    $paymentAccountId = $validatedData['payment_account_id'];
+
+                    $invoice->payments()->create([
+                        'account_id'   => $paymentAccountId,
+                        'amount'       => $paymentAmount,
+                        'payment_type' => 'invoice_payment',
+                        'method'       => $request->input('payment_method_text'),
+                        'note'         => 'Payment received during invoice update.',
+                    ]);
+
+                    AccountTransaction::create([
+                        'account_id' => $paymentAccountId,
+                        'type'       => 'invoice_payment',
+                        'amount'     => $paymentAmount,
+                        'reference'  => 'Invoice #' . $invoice->invoice_number,
+                        'note'       => 'Payment received for invoice update.',
+                    ]);
+                }
+
+                DB::commit();
+            } catch (Exception $e) {
+                DB::rollBack();
+                return redirect()->back()->with('error', $e->getMessage());
             }
         });
 
@@ -400,46 +521,59 @@ class InvoiceController extends Controller
         ]);
     }
 
+
     /**
      * Remove the specified resource from storage.
      */
     public function destroy(Invoice $invoice)
     {
-        try {
-            DB::transaction(function () use ($invoice) {
-                // 1. Reverse payments and account transactions associated with this invoice
-                foreach ($invoice->payments as $payment) {
-                    // Update account balance: subtract the amount that was added
-                    $account = $payment->account;
-                    if ($account) {
-                        $account->decrement('balance', $payment->amount);
-                    }
+        DB::transaction(function () use ($invoice) {
+            DB::beginTransaction();
 
-                    // Delete the associated AccountTransaction
-                    AccountTransaction::where('account_id', $payment->account_id)
-                        ->where('type', 'invoice_payment')
-                        ->where('reference', 'LIKE', 'Invoice #' . $invoice->invoice_number . '%')
-                        ->where('amount', $payment->amount) // Add amount check for specificity
-                        ->delete();
+            try {
+                // 1. Reverse advance usages
+                $advanceUsages = CustomerAdvanceUsage::where('invoice_id', $invoice->id)->get();
 
-                    // Delete the InvoicePayment record itself
-                    $payment->delete();
+                foreach ($advanceUsages as $usage) {
+                    $advance = CustomerAdvance::find($usage->customer_advance_id);
+
+                    // Delete the negative 'used' advance record
+                    CustomerAdvance::where([
+                        'customer_id'        => $invoice->customer_id,
+                        'type'               => 'used',
+                        'related_invoice_id' => $invoice->id,
+                        'account_id'         => $advance->account_id,
+                        'amount'             => -$usage->used_amount,
+                    ])->delete();
+
+                    $usage->delete();
                 }
 
+                // 2. Delete invoice payments
+                $invoice->payments()->delete();
+
+                // 3. Delete account transactions related to this invoice
+                AccountTransaction::where('reference', 'Invoice #' . $invoice->invoice_number)->delete();
+
+                // 4. Delete invoice items
                 $invoice->items()->delete();
 
-                // 3. Delete the invoice itself
+                // 5. Delete the invoice itself
                 $invoice->delete();
-            });
 
-            return redirect()->route('admin.invoice.index')->with([
-                'message' => 'Invoice deleted successfully.',
-                'alert-type' => 'success',
-            ]);
-        } catch (\Exception $e) {
-            // Log the error for debugging
-            Log::error('Error deleting invoice: ' . $e->getMessage());
-            return redirect()->back()->with('error', 'Failed to delete invoice. ' . $e->getMessage());
-        }
+                DB::commit();
+            } catch (Exception $e) {
+                DB::rollBack();
+                return redirect()->back()->with([
+                    'message' => 'Error deleting invoice: ' . $e->getMessage(),
+                    'alert-type' => 'error',
+                ]);
+            }
+        });
+
+        return redirect()->route('admin.invoice.index')->with([
+            'message' => 'Invoice deleted successfully.',
+            'alert-type' => 'success',
+        ]);
     }
 }

@@ -34,11 +34,16 @@ class Customer extends Model
         'profile_image',
     ];
 
-    protected $appends = ['current_balance'];
+    protected $appends = ['current_balance', 'advance_amount'];
 
     public function invoices()
     {
         return $this->hasMany(Invoice::class);
+    }
+
+    public function transaction()
+    {
+        return $this->hasMany(AccountTransaction::class);
     }
 
     public function invoicePayments()
@@ -92,12 +97,16 @@ class Customer extends Model
      */
     public function getAdvanceAmountAttribute()
     {
-        $payments = $this->payments()->where('payment_type', 'advance')->sum('amount');
-        return $payments > 0 ? $payments : 0;
+        return $this->advances()->sum('amount');
     }
 
     public function payments()
     {
-        return $this->hasMany(InvoicePayment::class, 'customer_id');
+        return $this->hasManyThrough(InvoicePayment::class, Invoice::class);
+    }
+
+    public function advances()
+    {
+        return $this->hasMany(CustomerAdvance::class);
     }
 }

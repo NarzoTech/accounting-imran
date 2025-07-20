@@ -100,7 +100,7 @@ class InvoiceController extends Controller
                             <a href="' . $detailsUrl . '" class="btn btn-info btn-sm" title="View Details"><i class="fas fa-eye"></i></a>
                             <a href="' . $editUrl . '" class="btn btn-primary btn-sm" title="Edit Invoice"><i class="fas fa-edit"></i></a>
                             <button class="btn btn-danger btn-sm delete-invoice" onclick="deleteData(' . $row->id . ')" title="Delete Invoice"><i class="fas fa-trash"></i></button>
-                            <a href="' . $makePaymentUrl . '" class="btn btn-success btn-sm" title="Make Payment"><i class="fas fa-dollar-sign"></i> Pay</a>
+                            <a href="' . $makePaymentUrl . '" class="btn btn-success btn-sm" title="Make Payment">Pay</a>
                         </div>
                     ';
                 })

@@ -27,6 +27,15 @@
                                 </x-admin.form-select>
                             </div>
 
+                            <div class="col-md-6 mb-4">
+                                <x-admin.form-select name="account_id" label="{{ __('Account') }}" required="true">
+                                    <x-admin.select-option value="" text="{{ __('Select Account') }}" />
+                                    @foreach ($accounts as $account)
+                                        <x-admin.select-option :value="$account->id" :text="$account->name" :selected="old('account_id', $investment->account_id ?? '') == $account->id" />
+                                    @endforeach
+                                </x-admin.form-select>
+                            </div>
+
                             <!-- Amount -->
                             <div class="col-md-6 mb-4">
                                 <x-admin.form-input name="amount" label="{{ __('Investment Amount') }}"

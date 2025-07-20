@@ -4,6 +4,9 @@ namespace Modules\Accounting\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Modules\Accounting\Models\Account;
+use Modules\Accounting\Models\AccountTransaction;
 use Modules\Accounting\Models\Container;
 use Modules\Accounting\Models\Investment;
 use Modules\Accounting\Models\Investor;
@@ -48,7 +51,8 @@ class InvestmentController extends Controller
     public function create()
     {
         $investors = Investor::all();
-        return view('accounting::investment.create', compact('investors'));
+        $accounts = Account::all();
+        return view('accounting::investment.create', compact('investors', 'accounts'));
     }
 
     /**
@@ -58,7 +62,7 @@ class InvestmentController extends Controller
     {
         $validated = $request->validate([
             'investor_id'      => 'required|exists:investors,id',
-            'container_id'     => 'nullable|exists:containers,id',
+            'account_id'        => 'required|exists:accounts,id',
             'amount'           => 'required|numeric|min:0.01',
             'investment_date'  => 'required|date',
             'expected_profit'  => 'nullable|numeric|min:0',
@@ -75,6 +79,13 @@ class InvestmentController extends Controller
         ]);
 
 
+        AccountTransaction::create([
+            'account_id' => $validated['account_id'],
+            'type' => 'deposit',
+            'amount' => $validated['amount'],
+            'reference' => 'Investment #' . $investment->id,
+            'note' => $validated['remarks'] ?? 'Investment received from investor ID: ' . $validated['investor_id'],
+        ]);
 
         $notification = __('Created Successfully');
         $notification = ['message' => $notification, 'alert-type' => 'success'];
@@ -99,7 +110,7 @@ class InvestmentController extends Controller
      */
     public function show($id)
     {
-        $investment = Investment::with(['investor', 'container', 'repayments'])->findOrFail($id);
+        $investment = Investment::with(['investor', 'repayments'])->findOrFail($id);
         return view('accounting::investment.show', compact('investment'));
     }
 
@@ -111,7 +122,8 @@ class InvestmentController extends Controller
         $investment = Investment::findOrFail($id);
 
         $investors = Investor::all();
-        return view('accounting::investment.edit', compact('investment', 'investors'));
+        $accounts = Account::all();
+        return view('accounting::investment.edit', compact('investment', 'investors', 'accounts'));
     }
 
     /**
@@ -123,19 +135,39 @@ class InvestmentController extends Controller
 
         $validated = $request->validate([
             'investor_id'      => 'required|exists:investors,id',
+            'account_id'        => 'required|exists:accounts,id',
             'amount'           => 'required|numeric|min:0.01',
             'investment_date'  => 'required|date',
             'expected_profit'  => 'nullable|numeric|min:0',
             'remarks'          => 'nullable|string',
         ]);
 
-        $investment->update([
-            'investor_id'      => $validated['investor_id'],
-            'amount'           => $validated['amount'],
-            'investment_date'  => $validated['investment_date'],
-            'expected_profit'  => $validated['expected_profit'] ?? 0,
-            'remarks'          => $validated['remarks'] ?? null,
-        ]);
+        try {
+            DB::beginTransaction();
+            $investment->update([
+                'investor_id'      => $validated['investor_id'],
+                'account_id'       => $validated['account_id'],
+                'amount'           => $validated['amount'],
+                'investment_date'  => $validated['investment_date'],
+                'expected_profit'  => $validated['expected_profit'] ?? 0,
+                'remarks'          => $validated['remarks'] ?? null,
+            ]);
+
+            AccountTransaction::where('reference', 'Investment #' . $investment->id)->delete();
+
+            AccountTransaction::create([
+                'account_id' => $validated['account_id'],
+                'type' => 'deposit',
+                'amount' => $validated['amount'],
+                'reference' => 'Investment #' . $investment->id,
+                'note' => $validated['remarks'] ?? 'Updated investment from investor ID: ' . $validated['investor_id'],
+            ]);
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()->withErrors(['error' => $e->getMessage()]);
+        }
+
 
         $notification = __('Updated Successfully');
         $notification = ['message' => $notification, 'alert-type' => 'success'];
@@ -155,9 +187,17 @@ class InvestmentController extends Controller
      */
     public function destroy($id)
     {
-        $investment = Investment::findOrFail($id);
-        $investment->delete();
+        try {
+            DB::beginTransaction();
+            $investment = Investment::findOrFail($id);
+            AccountTransaction::where('reference', 'Investment #' . $investment->id)->delete();
 
+            $investment->delete();
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()->withErrors(['error' => $e->getMessage()]);
+        }
         $notification = __('Deleted Successfully');
         $notification = ['message' => $notification, 'alert-type' => 'success'];
 

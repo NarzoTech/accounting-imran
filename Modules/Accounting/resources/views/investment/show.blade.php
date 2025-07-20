@@ -55,14 +55,7 @@
                         <th>{{ __('Remarks') }}</th>
                         <td colspan="3">{{ $investment->remarks ?? '-' }}</td>
                     </tr>
-                    @if ($investment->container)
-                        <tr>
-                            <th>{{ __('Container Number') }}</th>
-                            <td>{{ $investment->container->container_number }}</td>
-                            <th>{{ __('Container Type') }}</th>
-                            <td>{{ $investment->container->container_type }}</td>
-                        </tr>
-                    @endif
+
                 </tbody>
             </table>
 

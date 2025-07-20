@@ -6,8 +6,8 @@
     <div class="card mb-4">
         <div class="card-header d-flex justify-content-between align-items-center">
             <h4 class="section_title">{{ __('Investment Details') }}</h4>
-            <a href="{{ route('admin.investment.index') }}" class="btn btn-secondary">
-                <i class="fas fa-arrow-left"></i> {{ __('Back to List') }}
+            <a href="{{ route('admin.investment.index') }}" class="btn btn-primary">
+                <i class="fas fa-arrow-left me-2"></i> {{ __('Back to List') }}
             </a>
         </div>
 

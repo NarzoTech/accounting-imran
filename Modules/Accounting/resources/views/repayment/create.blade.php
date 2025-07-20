@@ -24,7 +24,7 @@
 
                         <div class="row">
                             <!-- Investment Selection -->
-                            <div class="col-md-12">
+                            <div class="col-md-12 mb-4">
                                 <x-admin.form-select name="investment_id" label="{{ __('Investment') }}" required="true">
                                     <x-admin.select-option value="" text="{{ __('Select Investment') }}" />
                                     @foreach ($investor->investments as $investment)
@@ -38,14 +38,14 @@
                             </div>
 
                             <!-- Amount -->
-                            <div class="col-md-6">
+                            <div class="col-md-6 mb-4">
                                 <x-admin.form-input name="amount" label="{{ __('Repayment Amount') }}"
                                     value="{{ old('amount') }}" type="number" step="0.01" required="true"
                                     id="amount" />
                             </div>
 
                             <!-- Repayment Date -->
-                            <div class="col-md-6">
+                            <div class="col-md-6 mb-4">
                                 <x-admin.form-input name="repayment_date" label="{{ __('Repayment Date') }}"
                                     value="{{ old('repayment_date', date('Y-m-d')) }}" type="date" required="true"
                                     id="repayment_date" />

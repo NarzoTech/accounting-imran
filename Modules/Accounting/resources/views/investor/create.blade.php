@@ -14,19 +14,19 @@
                     </div>
                     <div class="card-body pb-0">
                         <div class="row">
-                            <div class="col-md-6">
+                            <div class="col-md-6 mb-4">
                                 <x-admin.form-input name="name" label="{{ __('Name') }}" value="{{ old('name') }}"
                                     required="true" id="name" />
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-6 mb-4">
                                 <x-admin.form-input name="email" label="{{ __('Email') }}" value="{{ old('email') }}"
                                     type="email" id="email" />
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-6 mb-4">
                                 <x-admin.form-input name="phone" label="{{ __('Phone') }}" value="{{ old('phone') }}"
                                     id="phone" />
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-6 mb-4">
                                 <x-admin.form-input name="address" label="{{ __('Address') }}" value="{{ old('address') }}"
                                     id="address" />
                             </div>

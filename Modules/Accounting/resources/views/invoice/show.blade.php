@@ -10,13 +10,13 @@
                     <h4 class="mb-0">{{ __('Invoice Details') }}</h4>
                     <div>
                         <button class="btn btn-primary btn-sm me-2" onclick="window.print()">
-                            <i class="fas fa-print"></i> {{ __('Print Invoice') }}
+                            <i class="fas fa-print me-2"></i> {{ __('Print Invoice') }}
                         </button>
                         <a href="{{ route('admin.invoice.download', $invoice->id) }}" class="btn btn-info btn-sm">
-                            <i class="fas fa-download"></i> {{ __('Download PDF') }}
+                            <i class="fas fa-download me-2"></i> {{ __('Download PDF') }}
                         </a>
                         <a href="{{ route('admin.invoice.index') }}" class="btn btn-secondary btn-sm ms-2">
-                            <i class="fas fa-list"></i> {{ __('Back to List') }}
+                            <i class="fas fa-list me-2"></i> {{ __('Back to List') }}
                         </a>
                     </div>
                 </div>

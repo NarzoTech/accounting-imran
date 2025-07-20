@@ -7,7 +7,7 @@
     font-size: 14px;
     font-weight: normal;
     height: 43px;
-    line-height: 27px;
+    line-height: 43px;
     outline: none;
     padding-left: 13px !important;
     padding-right: 13px;
@@ -24,6 +24,7 @@
     border-radius: 6px;
     border: 1px solid #ddd !important;
     background: #FFF;
+    padding: 0px 20px !important;
 }
 
 .nice-select:hover {

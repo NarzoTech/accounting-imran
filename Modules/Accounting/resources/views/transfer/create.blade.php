@@ -19,7 +19,7 @@
                     </div>
                     <div class="card-body">
                         <div class="row">
-                            <div class="col-md-6">
+                            <div class="col-md-6 mb-4">
                                 <x-admin.form-select name="from_account_id" label="{{ __('From Account') }}"
                                     required="true">
                                     <x-admin.select-option value="" text="{{ __('Select Account') }}" />
@@ -30,7 +30,7 @@
                                 </x-admin.form-select>
                             </div>
 
-                            <div class="col-md-6">
+                            <div class="col-md-6 mb-4">
                                 <x-admin.form-select name="to_account_id" label="{{ __('To Account') }}" required="true">
                                     <x-admin.select-option value="" text="{{ __('Select Account') }}" />
                                     @foreach ($accounts as $account)
@@ -39,19 +39,19 @@
                                 </x-admin.form-select>
                             </div>
 
-                            <div class="col-md-6">
+                            <div class="col-md-6 mb-4">
                                 <x-admin.form-input name="amount" label="{{ __('Amount') }}"
                                     value="{{ old('amount', $transfer->amount ?? '') }}" type="number" step="0.01"
                                     required="true" />
                             </div>
 
-                            <div class="col-md-6">
+                            <div class="col-md-6 mb-4">
                                 <x-admin.form-input name="date" label="{{ __('Date') }}"
                                     value="{{ old('date', $transfer->date ?? date('Y-m-d')) }}" type="date"
                                     required="true" />
                             </div>
 
-                            <div class="col-md-12">
+                            <div class="col-md-12 mb-4">
                                 <x-admin.form-input name="reference" label="{{ __('Reference') }}"
                                     value="{{ old('reference', $transfer->reference ?? '') }}" type="text" />
                             </div>

@@ -30,8 +30,8 @@ class CategoryController extends Controller
                     $editUrl = route('admin.category.edit', $row->id);
                     $deleteUrl = route('admin.category.destroy', $row->id);
 
-                    $btn = '<a href="javascript:void(0)" data-id="' . $row->id . '" data-name="' . $row->name . '" class="edit btn btn-info btn-sm me-1 edit-category-btn"><i class="fas fa-edit"></i> Edit</a>';
-                    $btn .= '<a href="javascript:void(0)" data-id="' . $row->id . '" class="delete btn btn-danger btn-sm delete-category-btn"><i class="fas fa-trash"></i> Delete</a>';
+                    $btn = '<a href="javascript:void(0)" data-id="' . $row->id . '" data-name="' . $row->name . '" class="edit btn btn-info btn-sm me-1 edit-category-btn"><i class="fas fa-edit"></i> </a>';
+                    $btn .= '<a href="javascript:void(0)" data-id="' . $row->id . '" class="delete btn btn-danger btn-sm delete-category-btn"><i class="fas fa-trash"></i> </a>';
 
                     return $btn;
                 })

@@ -746,9 +746,9 @@ img.mr-3.ml-3.rounded-circle {
 
 .product_card tr td .btn-sm,
 .dataTables_wrapper tr td .btn-sm {
-    line-height: 1.375;
-    width: 35px;
-    height: 35px;
+    line-height: 40px;
+    width: 40px;
+    height: 40px;
     padding: 0;
 }
 
@@ -1717,10 +1717,17 @@ ul#basicPaymentTab li a {
     display: block !important;
 }
 
-.list_table tr td .btn-sm {
+.btn-group .btn-sm {
     width: 40px;
     height: 40px;
+    line-height: 40px;
     margin: 2px !important;
+    padding: 0;
+    border-radius: 6px !important;
+    -webkit-border-radius: 6px !important;
+    -moz-border-radius: 6px !important;
+    -ms-border-radius: 6px !important;
+    -o-border-radius: 6px !important;
 }
 
 button.btn {
@@ -2342,7 +2349,10 @@ button.btn.search-filter:hover {
 }
 
 .buttons-excel,
-.buttons-pdf {
+.buttons-pdf,
+.buttons-copy,
+.buttons-csv,
+.buttons-print {
     background: #696cff !important;
     cursor: pointer !important;
     background-color: #696cff;
@@ -2355,7 +2365,15 @@ button.btn.search-filter:hover {
 }
 
 .buttons-pdf {
-    background-color: green !important;
+    background-color: #71dd37 !important;
+}
+
+.buttons-csv {
+    background: #ff3e1d !important;
+}
+
+.buttons-print {
+    background: #03c3ec !important;
 }
 
 #customer_table .btn-group a,
@@ -2366,6 +2384,15 @@ button.btn.search-filter:hover {
     border-radius: 6px;
 }
 
+#incomeReportForm .form-group button {
+    width: 100%;
+}
+
+#incomeTable_wrapper .dt-buttons,
+#expenseTable_wrapper .dt-buttons {
+    margin-top: 15px;
+    margin-bottom: 10px;
+}
 
 /* dropzone system update end */
 

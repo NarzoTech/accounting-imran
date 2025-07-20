@@ -18,12 +18,12 @@
                     </div>
                     <div class="card-body">
                         <div class="row">
-                            <div class="col-md-6">
+                            <div class="col-md-6 mb-4">
                                 <x-admin.form-input name="name" label="{{ __('Account Name') }}"
                                     value="{{ old('name', $account->name ?? '') }}" type="text" />
                             </div>
 
-                            <div class="col-md-6">
+                            <div class="col-md-6 mb-4">
                                 <x-admin.form-select name="type" label="{{ __('Account Type') }}" required="true">
                                     <x-admin.select-option value="bank" text="{{ __('Bank') }}" :selected="old('type', $account->type ?? '') == 'bank'" />
                                     <x-admin.select-option value="mobile_banking" text="{{ __('Mobile Banking') }}"
@@ -34,17 +34,17 @@
                                 </x-admin.form-select>
                             </div>
 
-                            <div class="col-md-6">
+                            <div class="col-md-6 mb-4">
                                 <x-admin.form-input name="account_number" label="{{ __('Account Number') }}"
                                     value="{{ old('account_number', $account->account_number ?? '') }}" type="text" />
                             </div>
 
-                            <div class="col-md-6">
+                            <div class="col-md-6 mb-4">
                                 <x-admin.form-input name="provider" label="{{ __('Provider') }}"
                                     value="{{ old('provider', $account->provider ?? '') }}" type="text" />
                             </div>
 
-                            <div class="col-md-6">
+                            <div class="col-md-12 mb-4">
                                 <x-admin.form-input name="balance" label="{{ __('Opening Balance') }}"
                                     value="{{ old('balance', $account->balance ?? 0) }}" type="number" step="0.01" />
                             </div>

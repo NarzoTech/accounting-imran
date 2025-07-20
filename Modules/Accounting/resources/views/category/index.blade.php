@@ -38,7 +38,7 @@
     <div tabindex="-1" role="dialog" id="categoryModal" class="modal fade">
         <div class="modal-dialog" role="document">
             <div class="modal-content">
-                <div class="modal-header">
+                <div class="modal-header mb-0">
                     <h5 class="modal-title">{{ __('Add Product Category') }}</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
@@ -63,7 +63,7 @@
                         <input type="hidden" name="status" value="1">
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary rounded-md shadow-sm"
+                        <button type="button" class="btn btn-danger rounded-md shadow-sm"
                             data-bs-dismiss="modal">Close</button>
                         <button type="submit" class="btn btn-primary rounded-md shadow-sm">Save changes</button>
                     </div>
@@ -75,7 +75,7 @@
     <div tabindex="-1" role="dialog" id="editCategoryModal" class="modal fade">
         <div class="modal-dialog" role="document">
             <div class="modal-content">
-                <div class="modal-header">
+                <div class="modal-header mb-0">
                     <h5 class="modal-title">{{ __('Edit Product Category') }}</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
@@ -111,8 +111,8 @@
                         </div>
                     </div>
 
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary rounded-md shadow-sm"
+                    <div class="modal-footer pt-5">
+                        <button type="button" class="btn btn-danger rounded-md shadow-sm"
                             data-bs-dismiss="modal">Close</button>
                         <button type="submit" class="btn btn-primary rounded-md shadow-sm">Update Category</button>
                     </div>

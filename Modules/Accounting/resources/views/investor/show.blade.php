@@ -8,11 +8,11 @@
             <h4 class="section_title">{{ $investor->name }}</h4>
             <div>
                 <a href="{{ route('admin.investor.edit', $investor->id) }}" class="btn btn-warning btn-sm">
-                    <i class="fas fa-edit"></i> Edit
+                    <i class="fas fa-edit me-2"></i> Edit
                 </a>
                 <a href="{{ route('admin.repayment.create', ['investor_id' => $investor->id]) }}"
                     class="btn btn-success btn-sm">
-                    <i class="fas fa-dollar-sign"></i> Add Repayment
+                    <i class="fas fa-dollar-sign me-2"></i> Add Repayment
                 </a>
             </div>
         </div>

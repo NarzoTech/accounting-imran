@@ -14,21 +14,21 @@
                 <div class="card-body">
                     <form id="incomeReportForm" action="{{ route('admin.reports.income') }}" method="GET" class="mb-4">
                         <div class="row align-items-end">
-                            <div class="col-md-4">
+                            <div class="col-md-4 mb-4">
                                 <div class="form-group">
                                     <label for="start_date">{{ __('Start Date') }}</label>
                                     <input type="date" class="form-control" id="start_date" name="start_date"
                                         value="{{ $startDate }}">
                                 </div>
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-md-4 mb-4">
                                 <div class="form-group">
                                     <label for="end_date">{{ __('End Date') }}</label>
                                     <input type="date" class="form-control" id="end_date" name="end_date"
                                         value="{{ $endDate }}">
                                 </div>
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-md-4 mb-4">
                                 <div class="form-group">
                                     <button type="submit" class="btn btn-primary">{{ __('Generate Report') }}</button>
                                 </div>
@@ -38,7 +38,7 @@
 
                     <hr>
 
-                    <h5 class="mt-4">{{ __('Income Details') }}</h5>
+                    <h5 class="mt-4 mb-4">{{ __('Income Details') }}</h5>
                     <div class="table-responsive">
                         <table class="table table-bordered" id="incomeTable" width="100%" cellspacing="0">
                             <thead>

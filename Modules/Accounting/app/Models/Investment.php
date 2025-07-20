@@ -14,7 +14,6 @@ class Investment extends Model
      */
     protected $fillable = [
         'investor_id',
-        'container_id',
         'amount',
         'investment_date',
         'expected_profit',
@@ -29,11 +28,6 @@ class Investment extends Model
     public function investor()
     {
         return $this->belongsTo(Investor::class);
-    }
-
-    public function container()
-    {
-        return $this->belongsTo(Container::class);
     }
 
     public function repayments()

@@ -14,7 +14,6 @@ return new class extends Migration
         Schema::create('investments', function (Blueprint $table) {
             $table->id();
             $table->foreignId('investor_id')->constrained()->onDelete('cascade');
-            $table->unsignedBigInteger('container_id')->nullable();
             $table->decimal('amount', 15, 2);
             $table->date('investment_date');
             $table->decimal('expected_profit', 15, 2)->default(0); // optional

@@ -22,7 +22,6 @@
                                 <th>{{ __('Expected Profit') }}</th>
                                 <th>{{ __('Total Repaid') }}</th>
                                 <th>{{ __('Date') }}</th>
-                                <th>{{ __('Container') }}</th>
                                 <th width="15%">{{ __('Actions') }}</th>
                             </tr>
                         </thead>
@@ -81,10 +80,6 @@
                     {
                         data: 'investment_date',
                         name: 'investment_date'
-                    },
-                    {
-                        data: 'container',
-                        name: 'container.container_number'
                     },
                     {
                         data: 'action',

@@ -17,7 +17,7 @@ class InvestmentController extends Controller
     public function index(Request $request)
     {
         if ($request->ajax()) {
-            $data = Investment::with(['investor', 'container'])->latest();
+            $data = Investment::with(['investor'])->latest();
             return DataTables::of($data)
                 ->addIndexColumn()
                 ->editColumn('amount', fn($row) => number_format($row->amount, 2))
@@ -25,7 +25,7 @@ class InvestmentController extends Controller
                 ->editColumn('total_repaid', fn($row) => number_format($row->total_repaid, 2))
                 ->editColumn('investment_date', fn($row) => $row->investment_date->format('Y-m-d'))
                 ->addColumn('investor', fn($row) => $row->investor->name ?? '-')
-                ->addColumn('container', fn($row) => $row->container->container_number ?? '-')
+
                 ->addColumn('action', function ($row) {
                     $edit = route('admin.investment.edit', $row->id);
                     $show = route('admin.investment.show', $row->id);
@@ -48,8 +48,7 @@ class InvestmentController extends Controller
     public function create()
     {
         $investors = Investor::all();
-        $containers = Container::all();
-        return view('accounting::investment.create', compact('investors', 'containers'));
+        return view('accounting::investment.create', compact('investors'));
     }
 
     /**
@@ -68,13 +67,14 @@ class InvestmentController extends Controller
 
         $investment = Investment::create([
             'investor_id'      => $validated['investor_id'],
-            'container_id'     => $validated['container_id'] ?? null,
             'amount'           => $validated['amount'],
             'investment_date'  => $validated['investment_date'],
             'expected_profit'  => $validated['expected_profit'] ?? 0,
             'remarks'          => $validated['remarks'] ?? null,
-            'total_repaid'     => 0, // default
+            'total_repaid'     => 0,
         ]);
+
+
 
         $notification = __('Created Successfully');
         $notification = ['message' => $notification, 'alert-type' => 'success'];
@@ -111,8 +111,7 @@ class InvestmentController extends Controller
         $investment = Investment::findOrFail($id);
 
         $investors = Investor::all();
-        $containers = Container::all();
-        return view('accounting::investment.edit', compact('investment', 'investors', 'containers'));
+        return view('accounting::investment.edit', compact('investment', 'investors'));
     }
 
     /**
@@ -124,7 +123,6 @@ class InvestmentController extends Controller
 
         $validated = $request->validate([
             'investor_id'      => 'required|exists:investors,id',
-            'container_id'     => 'nullable|exists:containers,id',
             'amount'           => 'required|numeric|min:0.01',
             'investment_date'  => 'required|date',
             'expected_profit'  => 'nullable|numeric|min:0',
@@ -133,7 +131,6 @@ class InvestmentController extends Controller
 
         $investment->update([
             'investor_id'      => $validated['investor_id'],
-            'container_id'     => $validated['container_id'] ?? null,
             'amount'           => $validated['amount'],
             'investment_date'  => $validated['investment_date'],
             'expected_profit'  => $validated['expected_profit'] ?? 0,

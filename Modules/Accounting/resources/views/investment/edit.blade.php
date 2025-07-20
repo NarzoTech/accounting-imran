@@ -27,16 +27,6 @@
                                 </x-admin.form-select>
                             </div>
 
-                            <!-- Container -->
-                            <div class="col-md-6 mb-4">
-                                <x-admin.form-select name="container_id" label="{{ __('Container (optional)') }}">
-                                    <x-admin.select-option value="" text="{{ __('Select Container') }}" />
-                                    @foreach ($containers as $container)
-                                        <x-admin.select-option :value="$container->id" :selected="$investment->container_id == $container->id" :text="$container->container_number" />
-                                    @endforeach
-                                </x-admin.form-select>
-                            </div>
-
                             <!-- Amount -->
                             <div class="col-md-6 mb-4">
                                 <x-admin.form-input name="amount" label="{{ __('Investment Amount') }}"

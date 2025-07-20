@@ -28,7 +28,7 @@ class ExpenseController extends Controller
                     return $expense->account->name ?? 'N/A';
                 })
                 ->addColumn('container_name', function (Expense $expense) {
-                    return $expense->container->name ?? 'N/A';
+                    return $expense->container->container_number . ' (' . $expense->container->container_type . ')' ?? 'N/A';
                 })
                 ->editColumn('amount', function (Expense $expense) {
                     return number_format($expense->amount, 2);

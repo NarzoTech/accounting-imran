@@ -28,7 +28,7 @@ class IncomeController extends Controller
                     return $income->account->name ?? 'N/A';
                 })
                 ->addColumn('container_name', function (Income $income) {
-                    return $income->container->name ?? 'N/A'; // Assuming 'name' for container, adjust if it's 'container_number'
+                    return $income->container->container_number . ' (' . $income->container->container_type . ')' ?? 'N/A';
                 })
                 ->editColumn('amount', function (Income $income) {
                     return number_format($income->amount, 2); // Format amount nicely

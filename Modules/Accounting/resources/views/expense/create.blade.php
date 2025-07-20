@@ -42,7 +42,10 @@
                                 <x-admin.form-select name="container_id" label="{{ __('Container (Optional)') }}">
                                     <x-admin.select-option value="" text="{{ __('Select Container') }}" />
                                     @foreach ($containers as $container)
-                                        <x-admin.select-option :value="$container->id" :text="$container->name" :selected="old('container_id', $expense->container_id ?? '') == $container->id" />
+                                        <x-admin.select-option :value="$container->id" :text="$container->container_number .
+                                            ' (' .
+                                            $container->container_type .
+                                            ')'" :selected="old('container_id', $expense->container_id ?? '') == $container->id" />
                                     @endforeach
                                 </x-admin.form-select>
                             </div>

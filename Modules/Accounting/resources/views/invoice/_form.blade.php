@@ -348,7 +348,7 @@
                 <h5 class="modal-title" id="productSearchModalLabel">{{ __('Search Products') }}</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body">
+            <div class="modal-body py-0">
                 <input type="text" class="form-control mb-3" id="productSearchInput"
                     placeholder="Search Products">
                 <div id="productSearchResults" class="list-group">

@@ -34,6 +34,11 @@ class Customer extends Model
         'profile_image',
     ];
 
+    protected $casts = [
+        'opening_balance_as_of' => 'datetime',
+        'opening_balance' => 'float',
+    ];
+
     protected $appends = ['current_balance', 'advance_amount'];
 
     public function invoices()

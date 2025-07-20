@@ -354,10 +354,6 @@
                 <div id="productSearchResults" class="list-group">
                     <!-- Search results will be populated here -->
                 </div>
-                <div class="text-center mt-3">
-                    <a href="#" class="add-new-product" id="add-new-product-modal"><i
-                            class="fas fa-plus-circle me-2"></i>{{ __('Add "" as a new product') }}</a>
-                </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary"
@@ -705,9 +701,7 @@
                 const searchTerm = $(this).val();
                 displaySearchResults(searchTerm);
                 // Update the "Add "" as a new product" text
-                $('#add-new-product-modal').html(
-                    `<i class="fas fa-plus-circle me-2"></i>{{ __('Add "${searchTerm}" as a new product') }}`
-                );
+
             });
 
             // Handle click on a product search result

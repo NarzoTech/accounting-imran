@@ -155,6 +155,17 @@
                                             </div>
                                         </div>
                                     </div>
+                                    {{-- NEW: Payment Discount Field --}}
+                                    <div class="col-12">
+                                        <div class="form-group">
+                                            <label>{{ __('Payment Discount') }}</label>
+                                            <input type="number" class="form-control" name="payment_discount"
+                                                id="payment_discount_input" step="0.01" min="0"
+                                                value="{{ old('payment_discount', 0.0) }}">
+                                            <small
+                                                class="form-text text-muted">{{ __('Optional discount applied to the total receivable amount for this payment.') }}</small>
+                                        </div>
+                                    </div>
                                     <div class="col-12">
                                         <div class="form-group">
                                             <label>{{ __('Total Receiving Amount') }} <span
@@ -162,6 +173,20 @@
                                             <input type="number" class="form-control" name="receiving_amount"
                                                 id="total_receiving_amount_input" step="0.01" min="0" required
                                                 value="{{ old('receiving_amount', 0.0) }}">
+                                        </div>
+                                    </div>
+                                    {{-- Advance Amount Display --}}
+                                    <div class="col-12" id="advance_amount_group" style="display: none;">
+                                        <div class="form-group">
+                                            <label>{{ __('Advance Amount') }}</label>
+                                            <div class="input-group">
+                                                <div class="input-group-text" id="advance-addon"><i
+                                                        class="fas fa-hand-holding-usd"></i></div>
+                                                <input type="text" class="form-control" id="advance_amount_display"
+                                                    value="0.00" readonly />
+                                            </div>
+                                            <small
+                                                class="form-text text-muted">{{ __('This amount will be saved as an advance payment for the customer.') }}</small>
                                         </div>
                                     </div>
                                     <div class="col-12">
@@ -184,7 +209,6 @@
         </div>
     </div>
 @endsection
-
 @push('js')
     <script>
         $(document).ready(function() {
@@ -197,6 +221,8 @@
                     total += parseFloat($(this).val() || 0);
                 });
                 $('#total_receiving_amount_input').val(total.toFixed(2));
+                // After updating total receiving, always check and update advance amount display
+                updateAdvanceAmountDisplay();
             }
 
             // Function to manage the "Select All" checkbox state
@@ -206,9 +232,38 @@
                 $('#checkbox-all').prop('checked', totalInvoices > 0 && totalInvoices === checkedInvoices);
             }
 
+            // Function to update the advance amount display
+            function updateAdvanceAmountDisplay() {
+                const totalReceivable = parseFloat($('#total_receivable_hidden').val());
+                const paymentDiscount = parseFloat($('#payment_discount_input').val() || 0);
+                const totalReceivingAmount = parseFloat($('#total_receiving_amount_input').val() || 0);
+
+                // Calculate effective receivable after applying the payment discount
+                let effectiveTotalReceivable = totalReceivable - paymentDiscount;
+                if (effectiveTotalReceivable < 0) effectiveTotalReceivable =
+                0; // Receivable cannot be negative after discount
+
+                let advanceAmount = 0;
+                if (totalReceivingAmount > effectiveTotalReceivable) {
+                    advanceAmount = totalReceivingAmount - effectiveTotalReceivable;
+                    $('#advance_amount_display').val(advanceAmount.toFixed(2));
+                    $('#advance_amount_group').show();
+                } else {
+                    $('#advance_amount_display').val('0.00');
+                    $('#advance_amount_group').hide();
+                }
+            }
+
+
             // 1. "Select All" checkbox handler
             $('#checkbox-all').on('click', function() {
                 const isChecked = $(this).prop('checked');
+                const totalReceivableOriginal = parseFloat($('#total_receivable_hidden').val());
+                const paymentDiscount = parseFloat($('#payment_discount_input').val() || 0);
+                let effectiveTotalReceivableForAllocation = totalReceivableOriginal - paymentDiscount;
+                if (effectiveTotalReceivableForAllocation < 0) effectiveTotalReceivableForAllocation = 0;
+
+                let amountToAllocate = effectiveTotalReceivableForAllocation;
                 let allocatedSum = 0;
 
                 $('.invoice-checkbox').each(function() {
@@ -219,13 +274,16 @@
 
                     $thisCheckbox.prop('checked', isChecked);
 
-                    if (isChecked) {
-                        $receivingInput.val(dueAmount.toFixed(2));
-                        allocatedSum += dueAmount;
+                    if (isChecked && amountToAllocate > 0) {
+                        const amount = Math.min(dueAmount, amountToAllocate);
+                        $receivingInput.val(amount.toFixed(2));
+                        allocatedSum += amount;
+                        amountToAllocate -= amount;
                     } else {
                         $receivingInput.val('0.00');
                     }
                 });
+                $('#total_receiving_amount_input').val(allocatedSum.toFixed(2));
                 updateTotalReceivingAmount();
             });
 
@@ -257,11 +315,10 @@
                 // Cap the input value at the due amount for that invoice
                 if (value > dueAmount) {
                     value = dueAmount;
-                    $(this).val(value.toFixed(2)); // Correct the input field if it exceeds due
+                    $(this).val(value.toFixed(2));
                 } else {
-                    $(this).val(value.toFixed(2)); // Format to 2 decimal places
+                    $(this).val(value.toFixed(2));
                 }
-
 
                 const $checkbox = $(this).closest('tr').find('.invoice-checkbox');
                 if (value > 0) {
@@ -273,51 +330,82 @@
                 updateSelectAllCheckbox();
             });
 
+            // NEW: Payment Discount Input Handler
+            $('#payment_discount_input').on('input', function() {
+                let discountValue = parseFloat($(this).val());
+                if (isNaN(discountValue) || discountValue < 0) {
+                    discountValue = 0;
+                }
+                $(this).val(discountValue.toFixed(2));
+
+                // Trigger recalculation of the total receiving amount handler, which will re-allocate
+                $('#total_receiving_amount_input').trigger('input');
+            });
+
 
             // 4. Main "Total Receiving Amount" Input Handler (auto-allocation)
             $('#total_receiving_amount_input').on('input', function() {
-                let remainingPayment = parseFloat($(this).val());
+                let totalInputAmount = parseFloat($(this).val());
 
-                if (isNaN(remainingPayment) || remainingPayment < 0) {
-                    remainingPayment = 0;
+                if (isNaN(totalInputAmount) || totalInputAmount < 0) {
+                    totalInputAmount = 0;
                 }
-                $(this).val(remainingPayment.toFixed(2)); // Format to 2 decimal places
+                $(this).val(totalInputAmount.toFixed(2));
+
+                // Update and display advance amount based on the full input amount
+                updateAdvanceAmountDisplay();
+
+                // Get original total receivable and current payment discount
+                const totalReceivableOriginal = parseFloat($('#total_receivable_hidden').val());
+                const paymentDiscount = parseFloat($('#payment_discount_input').val() || 0);
+
+                // Calculate effective total receivable for allocation to invoices
+                let effectiveTotalReceivableForAllocation = totalReceivableOriginal - paymentDiscount;
+                if (effectiveTotalReceivableForAllocation < 0) effectiveTotalReceivableForAllocation = 0;
+
+
+                // Determine the amount that can be allocated specifically to invoices
+                let amountForInvoiceAllocation = Math.min(totalInputAmount,
+                    effectiveTotalReceivableForAllocation);
 
                 // Reset all individual receiving amounts and checkboxes
                 $('.receiving-amount-input').val('0.00');
                 $('.invoice-checkbox').prop('checked', false);
                 $('#checkbox-all').prop('checked', false);
 
-                // Iterate through invoices and allocate payment
+                // Iterate through invoices and allocate payment up to `amountForInvoiceAllocation`
                 $('.receiving-amount-input').each(function() {
                     const $thisInput = $(this);
                     const $thisCheckbox = $thisInput.closest('tr').find('.invoice-checkbox');
                     const dueAmount = parseFloat($thisCheckbox.data('due-amount'));
 
-                    if (remainingPayment <= 0) {
-                        // Stop allocating if no payment left
+                    if (amountForInvoiceAllocation <= 0) {
                         $thisInput.val('0.00');
                         $thisCheckbox.prop('checked', false);
-                        return true; // continue to next iteration in jQuery .each()
+                        return true;
                     }
 
                     if (dueAmount > 0) {
-                        const amountToApply = Math.min(remainingPayment, dueAmount);
+                        const amountToApply = Math.min(amountForInvoiceAllocation, dueAmount);
                         $thisInput.val(amountToApply.toFixed(2));
                         $thisCheckbox.prop('checked', true);
-                        remainingPayment -= amountToApply;
+                        amountForInvoiceAllocation -= amountToApply;
                     } else {
                         $thisInput.val('0.00');
                         $thisCheckbox.prop('checked', false);
                     }
                 });
-                updateSelectAllCheckbox(); // Update select all checkbox after allocation
+                updateSelectAllCheckbox();
             });
 
 
             // Initial call to set amounts if old input exists (e.g., after validation error)
-            @if (old('receiving_amount') > 0)
+            @if (old('receiving_amount') > 0 || old('payment_discount') > 0)
+                // Trigger discount input first to ensure effective total receivable is set before receiving amount logic runs
+                $('#payment_discount_input').trigger('input');
                 $('#total_receiving_amount_input').trigger('input');
+            @else
+                updateAdvanceAmountDisplay(); // Ensure initial display of advance amount is correct
             @endif
 
             // Initialize datepicker
@@ -332,7 +420,7 @@
             }
 
             // Initial calculation on page load (if any pre-filled values exist)
-            updateTotalReceivingAmount();
+            updateTotalReceivingAmount(); // This also calls updateAdvanceAmountDisplay
             updateSelectAllCheckbox();
         });
     </script>

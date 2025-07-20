@@ -12,7 +12,7 @@
                 </div>
             </div>
             <div class="card-body">
-                <div class="d-flex justify-content-start mb-3">
+                <div class="d-flex flex-wrap align-items-center justify-content-start mb-3">
                     <div class="btn-group" role="group" aria-label="Invoice Status Filter">
                         <button type="button" class="btn btn-outline-primary active" data-status="all">All</button>
                         <button type="button" class="btn btn-outline-primary" data-status="unpaid">Unpaid</button>
@@ -22,7 +22,7 @@
                     </div>
 
                     <!-- Customer Filter -->
-                    <div class="ms-3">
+                    <div class="ms-3 invoice_dropdown">
                         <select class="form-select" id="customer_filter">
                             <option value="">All Customers</option>
                             @foreach ($customers as $customer)
@@ -31,7 +31,7 @@
                         </select>
                     </div>
                 </div>
-                <div class="table-responsive list_table">
+                <div class="table-responsive mt-5 list_table">
                     <table class="table" id="invoices-table">
                         <thead>
                             <tr>

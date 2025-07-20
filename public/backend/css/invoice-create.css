@@ -289,10 +289,11 @@ body {
     margin-bottom: 15px;
 }
 
+/* 
 .customer-search-input-group .form-control {
     border-top-right-radius: 0;
     border-bottom-right-radius: 0;
-}
+} */
 
 .customer-search-input-group .input-group-text {
     background-color: #fff;

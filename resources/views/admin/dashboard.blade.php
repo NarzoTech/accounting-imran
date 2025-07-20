@@ -8,7 +8,7 @@
             <div class="card shadow-sm h-100">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h5 class="card-title mb-0">MY WALLETS</h5>
+                        <h4 class="card-title mb-0">MY WALLETS</h4>
                         <div class="dropdown">
                             <button class="btn btn-sm btn-light dropdown-toggle" type="button" id="walletsDropdown"
                                 data-bs-toggle="dropdown" aria-expanded="false">
@@ -24,7 +24,7 @@
                             </ul>
                         </div>
                     </div>
-                    <h2 class="card-text mb-2">BDT {{ number_format($totalBalance, 2) }}</h2>
+                    <h3 class="card-text mb-2 text-primary">BDT {{ number_format($totalBalance, 2) }}</h3>
                     <p class="text-muted">Balance</p>
                     <div class="d-flex justify-content-between mt-3">
                         <div>
@@ -47,7 +47,7 @@
             <div class="card shadow-sm h-100">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h5 class="card-title mb-0">INVOICE</h5>
+                        <h4 class="card-title mb-0">INVOICE</h4>
                         <div class="dropdown">
                             <button class="btn btn-sm btn-light dropdown-toggle" type="button" id="invoiceDropdown"
                                 data-bs-toggle="dropdown" aria-expanded="false">
@@ -63,7 +63,7 @@
                             </ul>
                         </div>
                     </div>
-                    <h2 class="card-text mb-2">BDT {{ number_format($totalInvoicesAmount, 2) }}</h2>
+                    <h3 class="card-text mb-2 text-primary">BDT {{ number_format($totalInvoicesAmount, 2) }}</h3>
                     <p class="text-muted">Total {{ $countInvoices }} Invoices</p>
                     {{-- Progress bars would be dynamic based on paid/unpaid --}}
                     <div class="progress mb-2" style="height: 8px;">
@@ -86,11 +86,11 @@
         <div class="col-md-4 mb-4">
             <div class="card shadow-sm h-100">
                 <div class="card-body">
-                    <h5 class="card-title mb-4">CUSTOMER, PRODUCTS</h5>
+                    <h4 class="card-title mb-4">CUSTOMER, PRODUCTS</h4>
                     <div class="d-flex align-items-center mb-3">
                         <i class="fas fa-users fs-4 me-3 text-primary"></i>
                         <div>
-                            <h4 class="mb-0">{{ $totalCustomers }} Customers</h4>
+                            <h5 class="mb-0">{{ $totalCustomers }} Customers</h5>
                             <a href="{{ route('admin.customer.create') }}" class="text-primary text-decoration-none"><i
                                     class="fas fa-plus-circle me-1"></i> Create a new Customer</a>
                         </div>
@@ -99,7 +99,7 @@
                     <div class="d-flex align-items-center">
                         <i class="fas fa-box-open fs-4 me-3 text-success"></i>
                         <div>
-                            <h4 class="mb-0">{{ $totalProducts }} Products</h4>
+                            <h5 class="mb-0">{{ $totalProducts }} Products</h5>
                             <a href="{{ route('admin.product.create') }}" class="text-success text-decoration-none"><i
                                     class="fas fa-plus-circle me-1"></i> Create a new Product</a>
                         </div>
@@ -115,7 +115,7 @@
             <div class="card shadow-sm h-100">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h5 class="card-title mb-0">EXPENSE BREAKDOWN</h5>
+                        <h4 class="card-title mb-0">EXPENSE BREAKDOWN</h4>
                         <div class="dropdown">
                             <button class="btn btn-sm btn-light dropdown-toggle" type="button" id="expenseDropdown"
                                 data-bs-toggle="dropdown" aria-expanded="false">
@@ -132,7 +132,7 @@
                             </ul>
                         </div>
                     </div>
-                    <h2 class="card-text mb-2">BDT {{ number_format($totalExpensesCurrentPeriod, 2) }}</h2>
+                    <h3 class="card-text mb-2 text-primary">BDT {{ number_format($totalExpensesCurrentPeriod, 2) }}</h3>
                     <p class="text-muted">{{ $filterText }}</p> {{-- Update text based on filter --}}
                     {{-- You can add a small chart here for breakdown --}}
                 </div>

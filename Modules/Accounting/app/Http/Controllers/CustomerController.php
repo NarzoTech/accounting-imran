@@ -44,7 +44,7 @@ class CustomerController extends Controller
                             <a href="' . $showUrl . '" class="btn btn-info btn-sm" title="View Details"><i class="fas fa-eye"></i></a>
                             <a href="' . $editUrl . '" class="btn btn-primary btn-sm" title="Edit Customer"><i class="fas fa-edit"></i></a>
                             <button type="button" onclick="deleteData(' . $row->id . ')" class="btn btn-danger btn-sm" title="Delete Customer"><i class="fas fa-trash"></i></button>
-                            <a href="' . $dueReceiveUrl . '" class="btn btn-success btn-sm" title="Receive Due"><i class="fas fa-dollar-sign"></i> Due</a>
+                            <a href="' . $dueReceiveUrl . '" class="btn btn-success btn-sm" title="Receive Due">Due</a>
                         </div>
                     ';
                 })

@@ -7,13 +7,13 @@
         @method('PUT')
     @endif
 
-    <div class="container invoice-container">
+    <div class="invoice-container mt-0 rounded-3">
 
         <div class="row">
             <!-- Left Column: Customer and Invoice Details -->
             <div class="col-lg-6">
                 <div class="card mb-4">
-                    <div class="card-body">
+                    <div class="card-body border rounded-3">
                         <div id="customer-display" class="customer-info-box">
                             @if (isset($invoice) && $invoice->customer)
                                 {{-- Pre-filled customer details for edit mode --}}
@@ -47,7 +47,7 @@
             <!-- Right Column: Invoice Number, Dates -->
             <div class="col-lg-6">
                 <div class="card mb-4">
-                    <div class="card-body">
+                    <div class="card-body border rounded-3">
                         <div class="row mb-3 align-items-center">
                             <label for="invoiceNumber"
                                 class="col-sm-5 col-form-label">{{ __('Invoice Number') }}</label>
@@ -111,10 +111,11 @@
                     style="{{ isset($invoice) && $invoice->items->isNotEmpty() ? 'display: none;' : '' }}">
                     <input type="text" class="form-control search-input" placeholder="Search Products"
                         data-bs-toggle="modal" data-bs-target="#productSearchModal" readonly>
-                    <div class="text-center mt-3">
-                        <a href="#" class="add-new-product" id="add-new-product-initial" data-bs-toggle="modal"
-                            data-bs-target="#productSearchModal"><i class="fas fa-plus-circle me-2"></i>Add "" as a new
-                            product</a>
+                    <div class="mt-5">
+                        <a href="#" class="add-new-product btn btn-primary" id="add-new-product-initial"
+                            data-bs-toggle="modal" data-bs-target="#productSearchModal"><i
+                                class="fas fa-plus-circle me-2"></i>Add "as a new
+                            product"</a>
                     </div>
                 </div>
 
@@ -178,8 +179,8 @@
                 </div>
 
                 <div class="row justify-content-end mt-4">
-                    <div class="col-md-6">
-                        <table class="table table-borderless summary-table">
+                    <div class="col-12">
+                        <table class="table table-borderless summary-table rounded-3">
                             <tbody>
                                 <tr>
                                     <td>{{ __('Subtotal') }}</td>
@@ -219,7 +220,7 @@
                     </div>
                 </div>
 
-                <div class="mb-3 mt-4">
+                <div class="mb-3 mt-5">
                     <label for="notesTerms" class="form-label">{{ __('Notes / Terms') }}</label>
                     <textarea class="form-control" id="notesTerms" rows="3"
                         placeholder="Enter notes or terms of service that you are visible to your customer" name="notes_terms">{{ old('notes_terms', $invoice->notes_terms ?? '') }}</textarea>
@@ -287,7 +288,7 @@
         <div class="accordion mb-4" id="invoiceFooterAccordion">
             <div class="accordion-item">
                 <h2 class="accordion-header" id="headingInvoiceFooter">
-                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                    <button class="accordion-button collapsed rounded-0" type="button" data-bs-toggle="collapse"
                         data-bs-target="#collapseInvoiceFooter" aria-expanded="false"
                         aria-controls="collapseInvoiceFooter">
                         {{ __('Invoice Footer') }}
@@ -296,7 +297,7 @@
                 <div id="collapseInvoiceFooter"
                     class="accordion-collapse collapse {{ old('invoice_footer', $invoice->invoice_footer ?? '') ? 'show' : '' }}"
                     aria-labelledby="headingInvoiceFooter" data-bs-parent="#invoiceFooterAccordion">
-                    <div class="accordion-body">
+                    <div class="accordion-body mt-5">
                         <label for="invoiceFooter"
                             class="form-label visually-hidden">{{ __('Invoice Footer Text') }}</label>
                         <textarea class="form-control" id="invoiceFooter" rows="2" name="invoice_footer">{{ old('invoice_footer', $invoice->invoice_footer ?? 'Just wanted to say thank you for your purchase. We\'re so lucky to have customers like you!') }}</textarea>
@@ -319,7 +320,7 @@
                 <h5 class="modal-title" id="customerModalLabel">{{ __('Select Customer') }}</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body">
+            <div class="modal-body py-0">
                 <!-- Search and Add Customer Input -->
                 <div class="customer-search-input-group input-group mb-3">
                     <span class="input-group-text"><i class="fas fa-search"></i></span>
@@ -331,8 +332,7 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary"
-                    data-bs-dismiss="modal">{{ __('Close') }}</button>
+                <button type="button" class="btn btn-danger" data-bs-dismiss="modal">{{ __('Close') }}</button>
 
             </div>
         </div>

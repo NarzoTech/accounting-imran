@@ -1735,6 +1735,9 @@ button.btn {
     line-height: 43px;
     text-align: center;
     padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 .input-group .input-group-text i {
@@ -2311,6 +2314,56 @@ button.btn.search-filter:hover {
 
 .progress-bar.bg-success {
     background-color: #2aa083 !important;
+}
+
+.invoice_dropdown .nice-select {
+    height: 40px;
+    line-height: 40px;
+    background: #FFF;
+    min-width: 180px;
+    padding: 0 20px !important;
+}
+
+.dataTables_paginate {}
+
+.dataTables_paginate ul {}
+
+.dataTables_paginate ul li {}
+
+.dataTables_paginate ul li a {}
+
+.dataTables_paginate ul li:first-child a,
+.dataTables_paginate ul li:last-child a {
+    border-radius: 8px;
+}
+
+#customerSearchResults .text-muted {
+    padding: 0 !important;
+}
+
+.buttons-excel,
+.buttons-pdf {
+    background: #696cff !important;
+    cursor: pointer !important;
+    background-color: #696cff;
+    color: #fff !important;
+    border: none !important;
+    border-radius: 4px !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+    margin-bottom: 10px !important;
+}
+
+.buttons-pdf {
+    background-color: green !important;
+}
+
+#customer_table .btn-group a,
+#customer_table .btn-group button {
+    width: 40px;
+    height: 40px;
+    line-height: 40px;
+    border-radius: 6px;
 }
 
 

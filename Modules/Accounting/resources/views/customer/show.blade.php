@@ -11,10 +11,10 @@
                 <h4 class="section_title">{{ __('Customer Details') }}</h4>
                 <div>
                     <a href="{{ route('admin.customer.edit', $customer->id) }}" class="btn btn-warning btn-sm">
-                        <i class="fas fa-edit"></i> {{ __('Edit Customer') }}
+                        <i class="fas fa-edit me-2"></i> {{ __('Edit Customer') }}
                     </a>
                     <a href="{{ route('admin.customer.index') }}" class="btn btn-secondary btn-sm">
-                        <i class="fas fa-list"></i> {{ __('Back to List') }}
+                        <i class="fas fa-list me-2"></i> {{ __('Back to List') }}
                     </a>
                 </div>
             </div>
@@ -23,8 +23,8 @@
                     {{-- Customer Basic Information --}}
                     <div class="col-md-6 mb-4">
                         <div class="card border-primary h-100">
-                            <div class="card-header bg-primary text-white">
-                                <h5 class="mb-0">{{ __('Basic Information') }}</h5>
+                            <div class="card-header bg-primary">
+                                <h5 class="mb-0 text-white">{{ __('Basic Information') }}</h5>
                             </div>
                             <div class="card-body">
                                 <p><strong>{{ __('Name') }}:</strong> {{ $customer->name }}</p>
@@ -52,8 +52,8 @@
                     {{-- Customer Address & Financial Overview --}}
                     <div class="col-md-6 mb-4">
                         <div class="card border-info h-100">
-                            <div class="card-header bg-info text-white">
-                                <h5 class="mb-0">{{ __('Address & Financial Overview') }}</h5>
+                            <div class="card-header bg-info">
+                                <h5 class="mb-0 text-white">{{ __('Address & Financial Overview') }}</h5>
                             </div>
                             <div class="card-body">
                                 <p><strong>{{ __('Address') }}:</strong> {{ $customer->address ?? 'N/A' }}</p>
@@ -117,8 +117,8 @@
                 <div class="row mt-4">
                     <div class="col-12">
                         <div class="card border-dark">
-                            <div class="card-header bg-dark text-white">
-                                <h5 class="mb-0">{{ __('Recent Invoices') }}</h5>
+                            <div class="card-header bg-dark">
+                                <h5 class="mb-0 text-white">{{ __('Recent Invoices') }}</h5>
                             </div>
                             <div class="card-body">
                                 @if ($customer->invoices->isNotEmpty())

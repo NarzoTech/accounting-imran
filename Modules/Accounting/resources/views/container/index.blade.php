@@ -119,13 +119,11 @@
                 dom: 'Bfrtip',
                 buttons: [{
                         extend: 'excelHtml5',
-                        text: 'Export Excel',
-                        className: 'btn btn-success'
+                        text: 'Excel',
                     },
                     {
                         extend: 'pdfHtml5',
-                        text: 'Export PDF',
-                        className: 'btn btn-danger'
+                        text: 'PDF',
                     },
                 ]
             });

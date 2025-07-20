@@ -33,4 +33,14 @@ class Container extends Model
         'estimated_arrival' => 'datetime',
         'actual_arrival' => 'datetime',
     ];
+
+    public function invoices()
+    {
+        return $this->hasMany(Invoice::class);
+    }
+
+    public function getTotalInvoicedAmountAttribute()
+    {
+        return $this->invoices->sum('total_amount');
+    }
 }

@@ -31,7 +31,9 @@ class ContainerController extends Controller
             return DataTables::of($data)
                 ->addColumn('actions', function ($row) {
                     $editUrl = route('admin.container.edit', $row->id);
+                    $showUrl = route('admin.container.show', $row->id);
                     return '
+                        <a href="' . $showUrl . '" class="btn btn-info btn-sm me-1"><i class="fas fa-eye"></i></a>
                         <a href="' . $editUrl . '" class="btn btn-primary btn-sm me-1"><i class="fas fa-edit"></i></a>
                         <button onclick="deleteData(' . $row->id . ')" type="button" class="btn btn-danger btn-sm"><i class="fas fa-trash-alt"></i></button>
                     ';

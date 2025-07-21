@@ -117,5 +117,10 @@
                 {{ __('Expense Report') }}
             </a>
         </li>
+        <li class="menu-item {{ isRoute(['admin.reports.container'], 'active') }}">
+            <a class="menu-link" href="{{ route('admin.reports.container') }}">
+                {{ __('Container Report') }}
+            </a>
+        </li>
     </ul>
 </li>

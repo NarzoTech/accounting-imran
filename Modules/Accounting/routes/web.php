@@ -44,7 +44,7 @@ Route::group(['as' => 'admin.', 'prefix' => 'admin', 'middleware' => ['auth:admi
 
     Route::get('reports/invoice', [AccountingController::class, 'invoiceReport'])->name('reports.invoice');
     Route::get('reports/customer', [AccountingController::class, 'customerReport'])->name('reports.customer');
-    Route::get('reports/container', [AccountingController::class, 'containerReport'])->name('reports.container');
+    Route::get('reports/container', [ReportController::class, 'containerReport'])->name('reports.container');
     Route::get('reports/product', [AccountingController::class, 'productReport'])->name('reports.product');
     Route::get('reports/category', [AccountingController::class, 'categoryReport'])->name('reports.category');
     Route::get('reports/income', [ReportController::class, 'income'])->name('reports.income');

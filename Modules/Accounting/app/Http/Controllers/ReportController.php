@@ -5,8 +5,12 @@ namespace Modules\Accounting\Http\Controllers;
 use App\Http\Controllers\Controller;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Modules\Accounting\Models\Account;
 use Modules\Accounting\Models\AccountTransaction;
+use Modules\Accounting\Models\Container;
+use Modules\Accounting\Models\Expense;
+use Modules\Accounting\Models\Income;
 use Modules\Accounting\Models\InvoicePayment;
 
 class ReportController extends Controller
@@ -247,6 +251,71 @@ class ReportController extends Controller
             'recordsTotal' => $totalRecords,
             'recordsFiltered' => $recordsFiltered,
             'data' => $data,
+        ]);
+    }
+
+
+    public function containerReport()
+    {
+        if (request()->ajax()) {
+            $containerId = request()->input('container_id');
+            if ($containerId) {
+                $container = Container::find($containerId);
+                if ($container) {
+                    return $this->getContainerData(request(), $container);
+                } else {
+                    return $this->getContainerData(request(), new Container());
+                }
+            }
+        }
+        $containers = Container::orderBy('created_at')->get();
+
+        return view('accounting::report.container', compact('containers'));
+    }
+
+    public function getContainerData(Request $request, Container $container)
+    {
+        // Fetch general incomes for the selected container, eager load account
+        $incomes = Income::where('container_id', $container->id)
+            ->with('account')
+            ->orderBy('date', 'desc')
+            ->get();
+
+        // Fetch expenses for the selected container, eager load account
+        $expenses = Expense::where('container_id', $container->id)
+            ->with('account')
+            ->orderBy('date', 'desc')
+            ->get();
+
+        // Fetch Invoice Payments related to invoices for this container, eager load invoice and account
+        $invoicePayments = InvoicePayment::whereHas('invoice', function ($query) use ($container) {
+            $query->where('container_id', $container->id);
+        })
+            ->with(['invoice', 'account'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        // Calculate totals and balance
+        $totalGeneralIncome = $incomes->sum('amount');
+        $totalInvoicePayments = $invoicePayments->sum('amount'); // Sum payments received for invoices
+        $totalExpense = $expenses->sum('amount');
+
+        // Total income is the sum of general incomes and invoice payments
+        $totalIncome = $totalGeneralIncome + $totalInvoicePayments;
+        $balance = $totalIncome - $totalExpense;
+
+        return response()->json([
+            'general_incomes' => $incomes,     // Renamed for clarity in JSON
+            'expenses' => $expenses,
+            'invoice_payments' => $invoicePayments, // New data set for third DataTable
+            'summary' => [
+                'total_income' => $totalIncome,
+                'total_general_income' => $totalGeneralIncome, // Optional: for detailed breakdown
+                'total_invoice_payments' => $totalInvoicePayments, // Optional: for detailed breakdown
+                'total_expense' => $totalExpense,
+                'balance' => $balance,
+            ],
+            'container_number' => $container->container_number, // Using container_number as requested
         ]);
     }
 }

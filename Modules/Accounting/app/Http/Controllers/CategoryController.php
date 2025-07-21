@@ -16,7 +16,7 @@ class CategoryController extends Controller
     {
         if ($request->ajax()) {
             // Include 'is_active' in the select statement
-            $data = Category::with('parent')->select(['id', 'name', 'status', 'created_at']);
+            $data = Category::with('parent')->orderBy('id', 'desc')->select(['id', 'name', 'status', 'created_at', 'parent_id']);
 
             return DataTables::of($data)
                 ->addIndexColumn()

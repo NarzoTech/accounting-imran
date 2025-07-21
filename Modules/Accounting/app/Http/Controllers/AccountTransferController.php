@@ -35,8 +35,8 @@ class AccountTransferController extends Controller
                     return \Carbon\Carbon::parse($transfer->date)->format('Y-m-d');
                 })
                 ->addColumn('actions', function ($row) {
-                    $editUrl = route('admin.account_transfers.edit', $row->id);
-                    $deleteUrl = route('admin.account_transfers.destroy', $row->id);
+                    $editUrl = route('admin.transfer.edit', $row->id);
+                    $deleteUrl = route('admin.transfer.destroy', $row->id);
 
                     return '
                         <a href="' . $editUrl . '" class="btn btn-primary btn-sm"><i class="fas fa-edit"></i></a>

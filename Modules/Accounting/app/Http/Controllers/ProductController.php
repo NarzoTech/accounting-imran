@@ -22,8 +22,8 @@ class ProductController extends Controller
                 ->addIndexColumn()
                 ->addColumn('product', function ($row) {
                     $image = $row->image
-                        ? asset('storage/' . $row->image)
-                        : 'https://via.placeholder.com/200x200?text=No+Image';
+                        ? asset($row->image)
+                        : asset('uploads/website-images/no-image.jpg');
 
                     return '
                         <div class="d-flex align-items-center gap-3">
@@ -49,11 +49,7 @@ class ProductController extends Controller
                 })
                 ->addColumn('action', function ($row) {
                     $editUrl = route('admin.product.edit', $row->id);
-                    $showUrl = route('admin.product.show', $row->id);
-                    $deleteUrl = route('admin.product.destroy', $row->id);
-
                     return '
-                        <a href="' . $showUrl . '" class="btn btn-info btn-sm"><i class="fas fa-eye"></i></a>
                         <a href="' . $editUrl . '" class="btn btn-primary btn-sm"><i class="fas fa-edit"></i></a>
                         <button class="btn btn-danger btn-sm delete-product" data-id="' . $row->id . '"><i class="fas fa-trash"></i></button>
                     ';
@@ -123,14 +119,6 @@ class ProductController extends Controller
         return response()->json(['success' => true, 'message' => 'Status updated successfully.']);
     }
 
-
-    /**
-     * Show the specified resource.
-     */
-    public function show($id)
-    {
-        return view('accounting::show');
-    }
 
     /**
      * Show the form for editing the specified resource.

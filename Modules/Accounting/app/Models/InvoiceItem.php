@@ -20,6 +20,7 @@ class InvoiceItem extends Model
         'quantity',
         'price',
         'amount',
+        'unit',
     ];
 
     public function product()

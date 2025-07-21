@@ -84,14 +84,13 @@
                                 <th>{{ __('Qty') }}</th>
                                 <th>{{ __('Unit') }}</th> {{-- Added Unit column --}}
                                 <th>{{ __('Unit Price') }}</th>
-                                {{-- <th>{{ __('Vat') }}</th> --}} {{-- Removed VAT if not in migration --}}
                                 <th>{{ __('Amount') }}</th>
                             </tr>
                         </thead>
                         <tbody>
                             @forelse($invoice->items as $item)
                                 <tr>
-                                    <td>{{ $item->product->name ?? 'N/A' }}</td> {{-- Assuming product relationship --}}
+                                    <td>{{ $item->product->name ?? 'N/A' }}</td>
                                     <td>{{ $item->description ?? 'N/A' }}</td>
                                     <td>{{ $item->quantity }}</td>
                                     <td>{{ $item->unit ?? 'N/A' }}</td> {{-- Display unit --}}

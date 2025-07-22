@@ -316,7 +316,7 @@ class InvoicePaymentController extends Controller
             'payment',
             'customer',
             'accounts',
-            'invoices', // <-- This was missing!
+            'invoices',
             'totalDue',
             'appliedAmounts',
             'totalDiscountForGroup',
@@ -327,7 +327,7 @@ class InvoicePaymentController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, InvoicePayment $payment)
+    public function update(Request $request, $id)
     {
         $request->validate([
             'customer_id'       => 'required|exists:customers,id',
@@ -354,7 +354,7 @@ class InvoicePaymentController extends Controller
         DB::beginTransaction();
 
         try {
-            $paymentGroup = InvoicePayment::findOrFail($payment->id);
+            $paymentGroup = InvoicePayment::findOrFail($id);
 
             $groupId = $paymentGroup->group_id;
 
@@ -362,6 +362,7 @@ class InvoicePaymentController extends Controller
             // ✅ Delete all existing payments and transactions for this group
             InvoicePayment::where('group_id', $groupId)->delete();
             AccountTransaction::where('group', $groupId)->delete();
+
 
             $totalApplied = 0;
             $usedDiscount = 0;
@@ -382,7 +383,7 @@ class InvoicePaymentController extends Controller
                             $usedDiscount = $discount;
                         }
 
-                        // 💸 Save invoice payment
+                        // Save invoice payment
                         $invoice->payments()->create([
                             'group_id'     => $groupId,
                             'account_id'   => $accountId,
@@ -395,7 +396,7 @@ class InvoicePaymentController extends Controller
                             'updated_at'   => now(),
                         ]);
 
-                        // 💳 Log account transaction
+                        //  Log account transaction
                         AccountTransaction::create([
                             'account_id' => $accountId,
                             'type'       => 'invoice_payment',
@@ -448,7 +449,7 @@ class InvoicePaymentController extends Controller
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
-
+            info($e->getMessage());
             return back()->withInput()->with([
                 'message'    => __('Failed to update payment: ') . $e->getMessage(),
                 'alert-type' => 'error'
@@ -460,11 +461,12 @@ class InvoicePaymentController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(InvoicePayment $payment)
+    public function destroy($id)
     {
         DB::beginTransaction();
 
         try {
+            $payment = InvoicePayment::findOrFail($id);
             $groupId = $payment->group_id;
 
             // Delete all invoice payments in the group
@@ -474,7 +476,13 @@ class InvoicePaymentController extends Controller
             AccountTransaction::where('group', $groupId)->delete();
 
             // Optionally delete customer advances related to this group
-            CustomerAdvance::where('group_id', $groupId)->delete();
+            $customerAdvances  = CustomerAdvance::where('group', $groupId)->get();
+
+            if ($customerAdvances->count() > 0) {
+                foreach ($customerAdvances as $advance) {
+                    $advance->delete();
+                }
+            }
 
             DB::commit();
 

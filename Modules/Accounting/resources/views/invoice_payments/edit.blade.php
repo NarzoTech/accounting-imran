@@ -95,7 +95,14 @@
                                             </tr>
                                         </thead>
                                         <tbody>
+                                            @php
+                                                $totalDue = 0;
+                                            @endphp
                                             @forelse ($invoices as $invoice)
+                                                @php
+                                                    $totalDue +=
+                                                        $invoice->amount_due + ($appliedAmounts[$invoice->id] ?? 0.0);
+                                                @endphp
                                                 <tr data-invoice-id="{{ $invoice->id }}">
                                                     <td>
                                                         <div class="custom-checkbox custom-control">
@@ -352,6 +359,7 @@
             $('#total_receiving_amount_input').on('input', function() {
                 let totalInputAmount = parseFloat($(this).val());
 
+
                 if (isNaN(totalInputAmount) || totalInputAmount < 0) {
                     totalInputAmount = 0;
                 }
@@ -368,11 +376,9 @@
                 let effectiveTotalReceivableForAllocation = totalReceivableOriginal - paymentDiscount;
                 if (effectiveTotalReceivableForAllocation < 0) effectiveTotalReceivableForAllocation = 0;
 
-
                 // Determine the amount that can be allocated specifically to invoices
                 let amountForInvoiceAllocation = Math.min(totalInputAmount,
                     effectiveTotalReceivableForAllocation);
-
                 // Reset all individual receiving amounts and checkboxes
                 $('.receiving-amount-input').val('0.00');
                 $('.invoice-checkbox').prop('checked', false);
@@ -384,6 +390,7 @@
                     const $thisCheckbox = $thisInput.closest('tr').find('.invoice-checkbox');
                     const dueAmount = parseFloat($thisCheckbox.data('due-amount'));
                     let currentVal = parseFloat($thisInput.val());
+
                     if (isNaN(currentVal) || currentVal <= 0) {
                         if (amountForInvoiceAllocation <= 0 || dueAmount <= 0) {
                             $thisInput.val('0.00');
@@ -391,7 +398,6 @@
                             return true;
                         }
                         const amountToApply = Math.min(amountForInvoiceAllocation, dueAmount);
-                        console.log(amountToApply);
                         $thisInput.val(amountToApply.toFixed(2));
                         $thisCheckbox.prop('checked', true);
                         amountForInvoiceAllocation -= amountToApply;

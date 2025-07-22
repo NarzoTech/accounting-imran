@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('account_transactions', function (Blueprint $table) {
             $table->id();
             $table->foreignId('account_id')->constrained()->onDelete('cascade');
-            $table->enum('type', ['deposit', 'expense', 'transfer_in', 'transfer_out', 'invoice_payment', 'advance_payment']);
+            $table->enum('type', ['deposit', 'expense', 'transfer_in', 'transfer_out', 'invoice_payment', 'advance_payment', 'discount']);
             $table->decimal('amount', 15, 2);
             $table->string('reference')->nullable();
             $table->text('note')->nullable();

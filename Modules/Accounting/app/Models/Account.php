@@ -42,7 +42,10 @@ class Account extends Model
             ->whereIn('type', ['expense', 'transfer_out'])
             ->sum('amount');
 
-        return $incomes - $expenses;
+        $discounts = $this->transactions()
+            ->where('type', 'discount')
+            ->sum('amount');
+        return ($incomes + $discounts) - ($expenses);
     }
 
 

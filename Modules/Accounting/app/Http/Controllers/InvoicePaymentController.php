@@ -89,6 +89,9 @@ class InvoicePaymentController extends Controller
             ->where(function ($query) {
                 $query->whereRaw('invoices.total_amount > (SELECT COALESCE(SUM(amount), 0) FROM invoice_payments WHERE invoice_payments.invoice_id = invoices.id AND invoice_payments.payment_type = "invoice_payment")');
             })
+            ->when($request->invoice_id, function ($query) use ($request) {
+                $query->where('id', $request->invoice_id);
+            })
             ->orderBy('invoice_date', 'asc') // Order by date for sequential allocation
             ->get();
 
@@ -103,6 +106,7 @@ class InvoicePaymentController extends Controller
      */
     public function store(Request $request)
     {
+
         $request->validate([
             'customer_id'       => 'required|exists:customers,id',
             'receiving_amount'  => 'required|numeric|min:0.01',
@@ -110,6 +114,7 @@ class InvoicePaymentController extends Controller
             'payment_date'      => 'required|date_format:d-m-Y',
             'amounts'           => 'nullable|array',
             'amounts.*'         => 'numeric|min:0',
+            'discount'          => 'nullable|numeric|min:0',
         ]);
 
         $customerId = $request->input('customer_id');
@@ -119,6 +124,7 @@ class InvoicePaymentController extends Controller
         $appliedAmounts = $request->input('amounts', []);
         $method = $request->input('method');
         $note = $request->input('note');
+        $discount = (float) $request->input('payment_discount', 0);
 
 
         DB::beginTransaction();
@@ -135,20 +141,26 @@ class InvoicePaymentController extends Controller
                         $dueBeforePayment = $invoice->amount_due;
                         $amountToApply = min($amount, $dueBeforePayment);
 
+                        if ($request->payment_discount > 0 && $dueBeforePayment == $amountToApply + $request->payment_discount) {
+                            $discount = $request->payment_discount;
+                        } else {
+                            $discount = 0;
+                        }
+
                         if ($amountToApply > 0) {
                             $invoice->payments()->create([
                                 'account_id'   => $accountId,
                                 'amount'       => $amountToApply,
+                                'discount'     => $discount,
                                 'payment_type' => 'invoice_payment',
                                 'method'       => $method,
                                 'note'         => $note,
-
                             ]);
 
                             AccountTransaction::create([
                                 'account_id' => $accountId,
                                 'type'       => 'invoice_payment',
-                                'amount'     => $amountToApply,
+                                'amount'     => $amountToApply + $discount,
                                 'reference'  => 'Invoice #' . $invoice->invoice_number,
                                 'note'       => 'Due Payment applied to invoice.',
                             ]);
@@ -157,6 +169,18 @@ class InvoicePaymentController extends Controller
                         }
                     }
                 }
+            }
+
+            if ($discount > 0) {
+                AccountTransaction::create([
+                    'account_id' => $accountId,
+                    'type'       => 'discount',
+                    'amount'     => -$discount,
+                    'reference'  => 'Customer Discount',
+                    'note'       => 'Discount applied on payment.',
+                ]);
+
+                $totalApplied += $discount;
             }
 
             // Handle any remaining amount as an advance payment if totalApplied is less than receivingAmount

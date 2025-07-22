@@ -17,6 +17,7 @@ class InvoicePayment extends Model
         'account_id',
         'customer_id',
         'amount',
+        'discount',
         'payment_type',
         'method',
         'group_id',

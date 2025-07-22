@@ -60,7 +60,11 @@ class Invoice extends Model
      */
     public function getAmountPaidAttribute()
     {
-        return $this->payments()->where('payment_type', 'invoice_payment')->sum('amount');
+        $amountPaid =  $this->payments()->where('payment_type', 'invoice_payment')->sum('amount');
+
+        $amountDiscount = $this->payments()->where('payment_type', 'invoice_payment')->sum('discount');
+
+        return $amountPaid + $amountDiscount;
     }
 
     /**

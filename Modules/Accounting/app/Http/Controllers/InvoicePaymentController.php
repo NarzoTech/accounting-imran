@@ -20,41 +20,57 @@ class InvoicePaymentController extends Controller
      */
     public function index(Request $request)
     {
-        if ($request->ajax()) {
-            $data = InvoicePayment::with(['invoice.customer', 'account'])->select('*');
 
+        if ($request->ajax()) {
+
+            $data = InvoicePayment::with(['invoice.customer', 'account'])
+                ->whereHas('invoice', function ($query) use ($request) {
+                    $query->where('id', $request->invoice_id);
+                })
+                ->get();
             return DataTables::of($data)
                 ->addIndexColumn()
-                ->addColumn('customer_name', function (InvoicePayment $payment) {
-                    return $payment->invoice->customer->name ?? 'Advance Payment';
-                })
-                ->addColumn('invoice_number', function (InvoicePayment $payment) {
-                    return $payment->invoice->invoice_number ?? 'N/A';
-                })
-                ->addColumn('account_name', function (InvoicePayment $payment) {
-                    return $payment->account->name ?? 'N/A';
-                })
-                ->editColumn('amount', function (InvoicePayment $payment) {
-                    return number_format($payment->amount, 2);
-                })
-                ->editColumn('payment_type', function (InvoicePayment $payment) {
-                    return ucwords(str_replace('_', ' ', $payment->payment_type));
-                })
-                ->editColumn('created_at', function (InvoicePayment $payment) {
-                    return \Carbon\Carbon::parse($payment->created_at)->format('Y-m-d H:i:s');
-                })
-                ->addColumn('actions', function ($row) {
-                    $editUrl = route('admin.invoice_payments.edit', $row->id);
-                    $deleteUrl = route('admin.invoice_payments.destroy', $row->id);
 
-                    return '
-                        <a href="' . $editUrl . '" class="btn btn-primary btn-sm"><i class="fas fa-edit"></i></a>
-                        <button class="btn btn-danger btn-sm delete-invoice-payment" onclick="deleteData(' . $row->id . ')"><i class="fas fa-trash"></i></button>
-                    ';
+                ->addColumn('customer_name', function (InvoicePayment $payment) {
+                    return optional(optional($payment->invoice)->customer)->name ?? 'Advance Payment';
                 })
+
+                ->addColumn('invoice_number', function (InvoicePayment $payment) {
+                    return optional($payment->invoice)->invoice_number ?? 'N/A';
+                })
+
+                ->addColumn('account_name', function (InvoicePayment $payment) {
+                    return optional($payment->account)->name ?? 'N/A';
+                })
+
+                ->editColumn('amount', function (InvoicePayment $payment) {
+                    return number_format($payment->amount ?? 0, 2);
+                })
+
+                ->editColumn('payment_type', function (InvoicePayment $payment) {
+                    return ucwords(str_replace('_', ' ', $payment->payment_type ?? ''));
+                })
+
+                ->editColumn('created_at', function (InvoicePayment $payment) {
+                    return optional($payment->created_at)->format('Y-m-d H:i:s') ?? 'N/A';
+                })
+
+                ->addColumn('actions', function (InvoicePayment $payment) {
+                    $editUrl = route('admin.invoice_payments.edit', ['invoice_payment' => $payment->id, 'customer_id' => $payment->invoice->customer_id ?? null]);
+                    return '
+                <a href="' . $editUrl . '" class="btn btn-primary btn-sm">
+                    <i class="fas fa-edit"></i>
+                </a>
+                <button class="btn btn-danger btn-sm delete-invoice-payment" onclick="deleteData(' . $payment->id . ')">
+                    <i class="fas fa-trash"></i>
+                </button>
+            ';
+                })
+
                 ->rawColumns(['actions'])
                 ->make(true);
         }
+
         return view('accounting::invoice_payments.index');
     }
 
@@ -87,13 +103,19 @@ class InvoicePaymentController extends Controller
         // An invoice is 'outstanding' if its total_amount is greater than the sum of its associated invoice payments.
         $invoices = Invoice::where('customer_id', $customer->id)
             ->where(function ($query) {
-                $query->whereRaw('invoices.total_amount > (SELECT COALESCE(SUM(amount), 0) FROM invoice_payments WHERE invoice_payments.invoice_id = invoices.id AND invoice_payments.payment_type = "invoice_payment")');
+                $query->whereRaw('invoices.total_amount > (
+            SELECT COALESCE(SUM(amount+ discount), 0)
+            FROM invoice_payments
+            WHERE invoice_payments.invoice_id = invoices.id
+              AND invoice_payments.payment_type IN ("invoice_payment")
+        )');
             })
             ->when($request->invoice_id, function ($query) use ($request) {
                 $query->where('id', $request->invoice_id);
             })
-            ->orderBy('invoice_date', 'asc') // Order by date for sequential allocation
+            ->orderBy('invoice_date', 'asc')
             ->get();
+
 
         // Calculate the total due amount for all outstanding invoices
         $totalDue = $invoices->sum('amount_due'); // amount_due is an accessor in your Invoice model
@@ -131,6 +153,8 @@ class InvoicePaymentController extends Controller
         try {
             $totalApplied = 0;
 
+            $groupId = uniqid('pay_');
+
             // Iterate through the amounts provided for each invoice
             foreach ($appliedAmounts as $invoiceId => $amount) {
                 $amount = (float) $amount;
@@ -149,6 +173,7 @@ class InvoicePaymentController extends Controller
 
                         if ($amountToApply > 0) {
                             $invoice->payments()->create([
+                                'group_id'     => $groupId,
                                 'account_id'   => $accountId,
                                 'amount'       => $amountToApply,
                                 'discount'     => $discount,
@@ -222,12 +247,48 @@ class InvoicePaymentController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit($id)
+    public function edit(Request $request, $id)
     {
+        // Ensure a customer_id is provided
+        if (!$request->has('customer_id')) {
+            return back()->with([
+                'message'    => __('Please select a customer first.'),
+                'alert-type' => 'warning'
+            ]);
+        }
+
+        $customer = Customer::find($request->get('customer_id'));
+
+        // Handle case where customer is not found
+        if (!$customer) {
+            return back()->with([
+                'message'    => __('Customer not found.'),
+                'alert-type' => 'error'
+            ]);
+        }
+
         $payment = InvoicePayment::findOrFail($id);
         $customers = Customer::all();
         $accounts = Account::all();
-        return view('accounting::invoice_payments.create', compact('payment', 'customers', 'accounts'));
+        $invoices = Invoice::where('customer_id', $customer->id)
+            ->where(function ($query) use ($payment) {
+                $query->whereRaw('invoices.total_amount > (
+        SELECT COALESCE(SUM(amount + discount), 0)
+        FROM invoice_payments
+        WHERE invoice_payments.invoice_id = invoices.id
+          AND invoice_payments.payment_type IN ("invoice_payment")
+          AND invoice_payments.group_id != ?
+    )', [$payment->group_id])
+                    ->orWhereIn('id', function ($subquery) use ($payment) {
+                        $subquery->select('invoice_id')
+                            ->from('invoice_payments')
+                            ->where('group_id', $payment->group_id);
+                    });
+            })
+
+            ->orderBy('invoice_date', 'asc')
+            ->get();
+        return view('accounting::invoice_payments.edit', compact('payment', 'customers', 'accounts', 'customer', 'invoices'));
     }
 
     /**
@@ -278,7 +339,7 @@ class InvoicePaymentController extends Controller
 
             // 3. Reapply payments based on new input
             $totalApplied = 0;
-            $groupId = uniqid('pay_'); // new group ID for this update set
+
 
             foreach ($appliedAmounts as $invoiceId => $amount) {
                 $amount = (float) $amount;
@@ -290,7 +351,6 @@ class InvoicePaymentController extends Controller
 
                         if ($amountToApply > 0) {
                             $invoice->payments()->create([
-                                'group_id'     => $groupId,
                                 'account_id'   => $accountId,
                                 'amount'       => $amountToApply,
                                 'payment_type' => 'invoice_payment',

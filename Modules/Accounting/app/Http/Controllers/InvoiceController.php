@@ -95,12 +95,14 @@ class InvoiceController extends Controller
                     $editUrl = route('admin.invoice.edit', $row->id);
                     $detailsUrl = route('admin.invoice.show', $row->id);
                     $makePaymentUrl = route('admin.invoice_payments.create', ['invoice_id' => $row->id, 'customer_id' => $row->customer_id]);
+                    $paymentLink = route('admin.invoice_payments.index', ['invoice_id' => $row->id]);
                     return '
                         <div class="btn-group" role="group" aria-label="Invoice Actions">
                             <a href="' . $detailsUrl . '" class="btn btn-info btn-sm" title="View Details"><i class="fas fa-eye"></i></a>
                             <a href="' . $editUrl . '" class="btn btn-primary btn-sm" title="Edit Invoice"><i class="fas fa-edit"></i></a>
                             <button class="btn btn-danger btn-sm delete-invoice" onclick="deleteData(' . $row->id . ')" title="Delete Invoice"><i class="fas fa-trash"></i></button>
                             <a href="' . $makePaymentUrl . '" class="btn btn-success btn-sm" title="Make Payment">Pay</a>
+                            <a href="' . $paymentLink . '" class="btn btn-secondary btn-sm" title="View Payments"><i class="fas fa-list"></i></a>
                         </div>
                     ';
                 })
@@ -168,17 +170,18 @@ class InvoiceController extends Controller
             'amount_paid'          => 'nullable|numeric|min:0', // This is the amount paid during creation
         ]);
 
-        DB::transaction(function () use ($request, $validatedData) {
-            DB::beginTransaction();
-            // Calculate subtotal and total amount based on items
-            $subtotal = collect($validatedData['items'])->sum(fn($item) => $item['quantity'] * $item['price']);
+        DB::beginTransaction();
+        try {
+            DB::transaction(function () use ($request, $validatedData) {
+
+                // Calculate subtotal and total amount based on items
+                $subtotal = collect($validatedData['items'])->sum(fn($item) => $item['quantity'] * $item['price']);
 
 
-            $discountAmount = ($subtotal * ($validatedData['discount_percentage'] ?? 0) / 100);
-            $deliveryCharge = $validatedData['delivery_charge'] ?? 0;
-            $totalAmount = $subtotal - $discountAmount + $deliveryCharge;
+                $discountAmount = ($subtotal * ($validatedData['discount_percentage'] ?? 0) / 100);
+                $deliveryCharge = $validatedData['delivery_charge'] ?? 0;
+                $totalAmount = $subtotal - $discountAmount + $deliveryCharge;
 
-            try {
                 $invoice = Invoice::create([
                     'customer_id'         => $validatedData['customer_id'],
                     'invoice_number'      => $validatedData['invoice_number'],
@@ -191,7 +194,7 @@ class InvoiceController extends Controller
                     'subtotal'            => $subtotal,
                     'total_amount'        => $totalAmount,
                     'notes_terms'         => $validatedData['notes_terms'],
-                    'invoice_footer'      => $validatedData['invoice_footer'],
+                    'invoice_footer'      => $validatedData['invoice_footer'] ?? null
                 ]);
 
                 // Save invoice items
@@ -259,7 +262,7 @@ class InvoiceController extends Controller
                 }
 
                 $paymentAmount = 0;
-
+                $groupId = uniqid('pay_');
                 // Handle payment if status is 'paid'
                 if ($validatedData['payment_status_input'] === 'paid' && ($validatedData['amount_paid'] ?? 0) > 0) {
                     $paymentAmount = $validatedData['amount_paid'];
@@ -267,6 +270,7 @@ class InvoiceController extends Controller
 
                     // Create InvoicePayment record
                     $invoice->payments()->create([
+                        'group_id' => $groupId,
                         'account_id'   => $paymentAccountId,
                         'amount'       => $paymentAmount,
                         'payment_type' => 'invoice_payment', // Always invoice_payment for creation
@@ -283,21 +287,26 @@ class InvoiceController extends Controller
                         'note'       => 'Payment received for invoice creation.',
                     ]);
                 }
+            });
 
-                DB::commit();
-            } catch (Exception $e) {
-                DB::rollBack();
-                return redirect()->back()->with('error', $e->getMessage());
-            }
-        });
+            DB::commit();
 
-
-        $notification = [
-            'message' => 'Invoice created successfully.',
-            'alert-type' => 'success',
-        ];
-
-        return redirect()->route('admin.invoice.index')->with($notification);
+            $notification = [
+                'message' => 'Invoice created successfully.',
+                'alert-type' => 'success',
+            ];
+            return redirect()->route('admin.invoice.index')->with($notification);
+        } catch (Exception $e) {
+            DB::rollBack();
+            info('Error creating invoice: ' . $e->getMessage());
+            $notification = [
+                'message' => 'Error creating invoice: ' . $e->getMessage(),
+                'alert-type' => 'error',
+            ];
+            return redirect()->back()->with(
+                ['message' => $e->getMessage(), 'alert-type' => 'error']
+            );
+        }
     }
 
     /**

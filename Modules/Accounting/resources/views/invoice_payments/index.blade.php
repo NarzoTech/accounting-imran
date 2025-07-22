@@ -22,6 +22,7 @@
                                     <th>Invoice #</th>
                                     <th>Payment Type</th>
                                     <th>Amount</th>
+                                    <th>Discount</th>
                                     <th>Account</th>
                                     <th>Method</th>
                                     <th>Date</th>
@@ -51,7 +52,7 @@
         $('#invoice-payments-table').DataTable({
             processing: true,
             serverSide: true,
-            ajax: '{{ route('admin.invoice_payments.index') }}',
+            ajax: '{{ request()->fullUrl() }}',
             columns: [{
                     data: 'DT_RowIndex',
                     name: 'DT_RowIndex',
@@ -73,6 +74,11 @@
                 {
                     data: 'amount',
                     name: 'amount'
+                },
+                {
+                    data: 'discount',
+                    name: 'discount',
+                    defaultContent: 'N/A'
                 },
                 {
                     data: 'account_name',

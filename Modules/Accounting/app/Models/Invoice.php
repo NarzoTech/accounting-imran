@@ -55,6 +55,15 @@ class Invoice extends Model
         return $this->hasMany(InvoicePayment::class);
     }
 
+    public function getDiscountAmountAttribute()
+    {
+
+        // payment discount
+        $paymentDiscount = $this->payments()->where('payment_type', 'invoice_payment')->sum('discount');
+
+        return $paymentDiscount ?? 0;
+    }
+
     /**
      * Calculate the total amount paid for this invoice.
      */

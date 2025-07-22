@@ -301,7 +301,7 @@
                     <div class="accordion-body mt-5">
                         <label for="invoiceFooter"
                             class="form-label visually-hidden">{{ __('Invoice Footer Text') }}</label>
-                        <textarea class="form-control" id="invoiceFooter" rows="2" name="invoice_footer">{{ old('invoice_footer', $invoice->invoice_footer ?? 'Just wanted to say thank you for your purchase. We\'re so lucky to have customers like you!') }}</textarea>
+                        <textarea class="form-control" id="invoiceFooter" rows="2" name="invoice_footer" @disabled(old('invoice_footer', $invoice->invoice_footer ?? '') ? '' : 'disabled')>{{ old('invoice_footer', $invoice->invoice_footer ?? 'Just wanted to say thank you for your purchase. We\'re so lucky to have customers like you!') }}</textarea>
                     </div>
                 </div>
             </div>
@@ -793,24 +793,25 @@
             });
 
             // Invoice Footer Accordion logic
-            $('#headingInvoiceFooter button').on('click', function() {
+            $('#collapseInvoiceFooter').on('shown.bs.collapse', function() {
                 const $footerTextarea = $('#invoiceFooter');
-                // The name attribute is added/removed based on whether the accordion is expanded.
-                // This ensures the footer text is only submitted if the accordion is open.
-                if ($('#collapseInvoiceFooter').hasClass('show')) {
-                    $footerTextarea.removeAttr('name');
-                } else {
-                    $footerTextarea.attr('name', 'invoice_footer');
-                }
+                $footerTextarea.removeAttr('disabled');
+                $footerTextarea.attr('name', 'invoice_footer');
             });
+
+            $('#collapseInvoiceFooter').on('hidden.bs.collapse', function() {
+                const $footerTextarea = $('#invoiceFooter');
+                $footerTextarea.attr('disabled', 'disabled');
+                $footerTextarea.removeAttr('name');
+
+            });
+
 
             // Initial calculation for edit mode
             @if (isset($invoice))
-                // if (initialInvoiceItems.length > 0) {
-                //     initialInvoiceItems.forEach(item => addItemToInvoiceTable(item, true));
-                // }
                 calculateTotals();
             @endif
+
         });
     </script>
 @endpush

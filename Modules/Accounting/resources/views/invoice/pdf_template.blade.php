@@ -172,65 +172,55 @@
             </table>
         </div>
 
-        <div class="summary-table text-right">
-            <table>
-                <tr>
-                    <td>{{ __('Subtotal') }} :</td>
-                    <td>{{ currency($invoice->subtotal) }}</td>
-                </tr>
-                <tr>
-                    <td>{{ __('Discount') }} ({{ $invoice->discount_percentage }}%) :</td>
-                    <td>{{ currency($invoice->total_amount - $invoice->subtotal - $invoice->delivery_charge) }}</td>
-                </tr>
-                <tr>
-                    <td>{{ __('Delivery Charge') }} :</td>
-                    <td>{{ currency($invoice->delivery_charge) }}</td>
-                </tr>
-                <tr class="total-row">
-                    <td>{{ __('Total') }} :</td>
-                    <td>{{ currency($invoice->total_amount) }}</td>
-                </tr>
-                <tr>
-                    <td>{{ __('Amount Paid') }} :</td>
-                    <td>{{ currency($invoice->amount_paid) }}</td>
-                </tr>
-                <tr>
-                    <td>{{ __('Amount Due') }} :</td>
-                    <td>{{ currency($invoice->amount_due) }}</td>
-                </tr>
-            </table>
-        </div>
-
-        <h3 class="mt-4 mb-3">{{ __('Payment History') }}</h3>
-        <div class="payment-history">
-            @if ($invoice->payments->isNotEmpty())
-                <table>
-                    <thead>
+        <div>
+            <table class="summary-table text-right">
+                <tbody>
+                    <tr>
+                        <td class="label">{{ __('Subtotal') }} :</td>
+                        <td class="value">{{ currency($invoice->subtotal) }}</td>
+                    </tr>
+                    @php
+                        $discountAmount = ($invoice->subtotal * $invoice->discount_percentage) / 100;
+                    @endphp
+                    @if ($invoice->discount_percentage > 0)
                         <tr>
-                            <th>{{ __('Date') }}</th>
-                            <th>{{ __('Amount') }}</th>
-                            <th>{{ __('Payment Type') }}</th>
-                            <th>{{ __('Method') }}</th>
-                            <th>{{ __('Account') }}</th>
-                            <th>{{ __('Note') }}</th>
+                            <td class="label">{{ __('Discount') }} ({{ $invoice->discount_percentage }}%) :
+                            </td>
+                            <td class="value">{{ currency($discountAmount) }}</td>
                         </tr>
-                    </thead>
-                    <tbody>
-                        @foreach ($invoice->payments->sortBy('created_at') as $payment)
-                            <tr>
-                                <td>{{ $payment->created_at->format('d M Y') }}</td>
-                                <td>{{ currency($payment->amount) }}</td>
-                                <td>{{ ucwords(str_replace('_', ' ', $payment->payment_type)) }}</td>
-                                <td>{{ $payment->method ?? 'N/A' }}</td>
-                                <td>{{ $payment->account->name ?? 'N/A' }}</td>
-                                <td>{{ $payment->note ?? 'N/A' }}</td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            @else
-                <p class="text-muted">{{ __('No payments recorded for this invoice yet.') }}</p>
-            @endif
+                    @endif
+                    @if ($invoice->delivery_charge > 0)
+                        <tr>
+                            <td class="label">{{ __('Delivery Charge') }} :</td>
+                            <td class="value">{{ currency($invoice->delivery_charge) }}</td>
+                        </tr>
+                    @endif
+                    <tr class="total-row">
+                        <td class="label">{{ __('Total') }} :</td>
+                        <td class="value">{{ currency($invoice->total_amount) }}</td>
+                    </tr>
+                    @foreach ($invoice->payments as $payment)
+                        <tr>
+                            <td class="label">{{ __('Payment On') }}
+                                ({{ $payment->created_at->format('d F Y') }})
+                                by {{ $payment->account->name ?? 'N/A' }}
+                                :</td>
+                            <td class="value">{{ currency($payment->amount) }}</td>
+                        </tr>
+                    @endforeach
+
+                    @if ($invoice->discount_amount > 0)
+                        <tr>
+                            <td class="label">{{ __('Discount') }} :</td>
+                            <td class="value">{{ currency($invoice->discount_amount) }}</td>
+                        </tr>
+                    @endif
+                    <tr>
+                        <td class="label">{{ __('Amount Due') }} :</td>
+                        <td class="value">{{ currency($invoice->amount_due) }}</td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
 
         @if ($invoice->notes_terms)

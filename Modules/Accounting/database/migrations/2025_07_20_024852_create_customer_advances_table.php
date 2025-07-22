@@ -20,6 +20,7 @@ return new class extends Migration
             $table->unsignedBigInteger('related_invoice_id')->nullable();
             $table->unsignedBigInteger('account_id')->nullable();
             $table->text('note')->nullable();
+            $table->string('group')->nullable()->comment('Group ID for categorization');
             $table->timestamps();
 
             $table->foreign('customer_id')->references('id')->on('customers')->onDelete('cascade');

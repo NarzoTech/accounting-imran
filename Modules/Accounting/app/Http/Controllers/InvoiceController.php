@@ -182,6 +182,7 @@ class InvoiceController extends Controller
                 $deliveryCharge = $validatedData['delivery_charge'] ?? 0;
                 $totalAmount = $subtotal - $discountAmount + $deliveryCharge;
 
+                $groupId = uniqid('pay_'); // Unique group ID for this invoice
                 $invoice = Invoice::create([
                     'customer_id'         => $validatedData['customer_id'],
                     'invoice_number'      => $validatedData['invoice_number'],
@@ -242,6 +243,7 @@ class InvoiceController extends Controller
                         'account_id'          => $advance->account_id,
                         'related_invoice_id'  => $invoice->id,
                         'note'                => 'Advance applied to Invoice #' . $invoice->invoice_number,
+                        'group'                => $groupId,
                     ]);
 
                     $invoice->payments()->create([
@@ -250,6 +252,7 @@ class InvoiceController extends Controller
                         'payment_type' => 'invoice_payment',
                         'method'       => 'Advance Applied',
                         'note'         => 'Advance payment applied to invoice #' . $invoice->invoice_number,
+                        'group_id'     => $groupId,
                     ]);
 
                     AccountTransaction::create([
@@ -258,6 +261,7 @@ class InvoiceController extends Controller
                         'amount'     => $applyAmount,
                         'reference'  => 'Invoice #' . $invoice->invoice_number,
                         'note'       => 'Advance applied to invoice.',
+                        'group' => $groupId,
                     ]);
                 }
 
@@ -276,6 +280,7 @@ class InvoiceController extends Controller
                         'payment_type' => 'invoice_payment', // Always invoice_payment for creation
                         'method'       => $request->input('payment_method_text'), // Get method from a text input
                         'note'         => 'Payment received during invoice creation.',
+                        'group' => $groupId,
                     ]);
 
                     // Record AccountTransaction
@@ -285,6 +290,7 @@ class InvoiceController extends Controller
                         'amount'     => $paymentAmount,
                         'reference'  => 'Invoice #' . $invoice->invoice_number,
                         'note'       => 'Payment received for invoice creation.',
+                        'group' => $groupId,
                     ]);
                 }
             });
@@ -478,6 +484,7 @@ class InvoiceController extends Controller
                     ->orderBy('created_at')
                     ->get();
 
+                $groupId = uniqid('pay_'); // Unique group ID for this invoice
                 foreach ($advances as $advance) {
                     if ($remainingToPay <= 0) break;
 
@@ -500,6 +507,7 @@ class InvoiceController extends Controller
                         'account_id'          => $advance->account_id,
                         'related_invoice_id'  => $invoice->id,
                         'note'                => 'Advance applied to Invoice #' . $invoice->invoice_number,
+                        'group'               => $groupId,
                     ]);
 
                     $invoice->payments()->create([
@@ -508,6 +516,7 @@ class InvoiceController extends Controller
                         'payment_type' => 'invoice_payment',
                         'method'       => 'Advance Applied',
                         'note'         => 'Advance payment applied to invoice #' . $invoice->invoice_number,
+                        'group_id'     => $groupId,
                     ]);
 
                     AccountTransaction::create([
@@ -516,6 +525,7 @@ class InvoiceController extends Controller
                         'amount'     => $applyAmount,
                         'reference'  => 'Invoice #' . $invoice->invoice_number,
                         'note'       => 'Advance applied to invoice.',
+                        'group'      => $groupId,
                     ]);
 
                     $remainingToPay -= $applyAmount;
@@ -523,6 +533,7 @@ class InvoiceController extends Controller
 
                 // Re-apply direct payment (if any)
                 if ($validatedData['payment_status_input'] === 'paid' && ($validatedData['amount_paid'] ?? 0) > 0) {
+                    $groupId = uniqid('pay_'); // Unique group ID for this invoice
                     $paymentAmount = $validatedData['amount_paid'];
                     $paymentAccountId = $validatedData['payment_account_id'];
 
@@ -532,6 +543,7 @@ class InvoiceController extends Controller
                         'payment_type' => 'invoice_payment',
                         'method'       => $request->input('payment_method_text'),
                         'note'         => 'Payment received during invoice update.',
+                        'group_id' => $groupId,
                     ]);
 
                     AccountTransaction::create([
@@ -540,6 +552,7 @@ class InvoiceController extends Controller
                         'amount'     => $paymentAmount,
                         'reference'  => 'Invoice #' . $invoice->invoice_number,
                         'note'       => 'Payment received for invoice update.',
+                        'group' => $groupId,
                     ]);
                 }
 

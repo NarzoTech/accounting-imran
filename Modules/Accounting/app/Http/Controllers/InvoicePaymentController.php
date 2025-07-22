@@ -188,6 +188,7 @@ class InvoicePaymentController extends Controller
                                 'amount'     => $amountToApply + $discount,
                                 'reference'  => 'Invoice #' . $invoice->invoice_number,
                                 'note'       => 'Due Payment applied to invoice.',
+                                'group'     => $groupId,
                             ]);
 
                             $totalApplied += $amountToApply;
@@ -203,6 +204,7 @@ class InvoicePaymentController extends Controller
                     'amount'     => -$discount,
                     'reference'  => 'Customer Discount',
                     'note'       => 'Discount applied on payment.',
+                    'group'     => $groupId,
                 ]);
 
                 $totalApplied += $discount;
@@ -219,6 +221,7 @@ class InvoicePaymentController extends Controller
                     'type' => 'received',
                     'account_id' => $accountId,
                     'note' => $note ? $note . ' (Advance Payment)' : 'Advance Payment',
+                    'group_id' => $groupId,
                 ]);
             }
 
@@ -267,28 +270,58 @@ class InvoicePaymentController extends Controller
             ]);
         }
 
-        $payment = InvoicePayment::findOrFail($id);
-        $customers = Customer::all();
+        $payment = InvoicePayment::findOrFail($id); // This is one payment record from the group
         $accounts = Account::all();
-        $invoices = Invoice::where('customer_id', $customer->id)
-            ->where(function ($query) use ($payment) {
-                $query->whereRaw('invoices.total_amount > (
-        SELECT COALESCE(SUM(amount + discount), 0)
-        FROM invoice_payments
-        WHERE invoice_payments.invoice_id = invoices.id
-          AND invoice_payments.payment_type IN ("invoice_payment")
-          AND invoice_payments.group_id != ?
-    )', [$payment->group_id])
-                    ->orWhereIn('id', function ($subquery) use ($payment) {
-                        $subquery->select('invoice_id')
-                            ->from('invoice_payments')
-                            ->where('group_id', $payment->group_id);
-                    });
-            })
 
+        // Get all invoice IDs that were part of this payment group
+        $invoiceIdsInGroup = InvoicePayment::where('group_id', $payment->group_id)
+            ->pluck('invoice_id')
+            ->toArray();
+
+        // Fetch all invoices for the customer that are either outstanding OR were part of this payment group
+        $invoices = Invoice::where('customer_id', $customer->id)
+            ->with('payments')
+            ->where(function ($query) use ($invoiceIdsInGroup, $payment) {
+                // Invoices that are currently outstanding (excluding amounts from THIS payment group)
+                $query->whereRaw('invoices.total_amount > (
+                    SELECT COALESCE(SUM(amount + discount), 0)
+                    FROM invoice_payments
+                    WHERE invoice_payments.invoice_id = invoices.id
+                      AND invoice_payments.payment_type IN ("invoice_payment")
+                      AND invoice_payments.group_id != ?
+                )', [$payment->group_id])
+                    // OR invoices that were part of this payment group (to display them in the form)
+                    ->orWhereIn('id', $invoiceIdsInGroup);
+            })
             ->orderBy('invoice_date', 'asc')
             ->get();
-        return view('accounting::invoice_payments.edit', compact('payment', 'customers', 'accounts', 'customer', 'invoices'));
+
+        // Calculate the total due amount for all invoices displayed
+        $totalDue = $invoices->sum('amount_due');
+
+        // Prepare applied amounts for the view (for pre-filling individual invoice inputs)
+        // This will be a map of invoice_id => amount applied by THIS group_id
+        $appliedAmounts = InvoicePayment::where('group_id', $payment->group_id)
+            ->pluck('amount', 'invoice_id')
+            ->toArray();
+
+        // Get the total discount for the entire group
+        $totalDiscountForGroup = InvoicePayment::where('group_id', $payment->group_id)->sum('discount');
+
+        // Calculate the total amount applied to invoices within this group (excluding the overall discount)
+        $totalAppliedToInvoices = InvoicePayment::where('group_id', $payment->group_id)->sum('amount');
+
+
+        return view('accounting::invoice_payments.edit', compact(
+            'payment',
+            'customer',
+            'accounts',
+            'invoices', // <-- This was missing!
+            'totalDue',
+            'appliedAmounts',
+            'totalDiscountForGroup',
+            'totalAppliedToInvoices'
+        ));
     }
 
     /**
@@ -303,6 +336,8 @@ class InvoicePaymentController extends Controller
             'payment_date'      => 'required|date_format:d-m-Y',
             'amounts'           => 'nullable|array',
             'amounts.*'         => 'numeric|min:0',
+            'payment_discount'  => 'nullable|numeric|min:0',
+
         ]);
 
         $customerId = $request->input('customer_id');
@@ -312,71 +347,85 @@ class InvoicePaymentController extends Controller
         $appliedAmounts = $request->input('amounts', []);
         $method = $request->input('method');
         $note = $request->input('note');
+        $inputDiscount = (float) $request->input('payment_discount', 0);
+
+
 
         DB::beginTransaction();
 
         try {
-            // 1. Reverse previous payments related to this InvoicePayment (assumes you track them)
-            $relatedPayments = InvoicePayment::where('group_id', $payment->group_id)->get(); // assuming group_id groups a payment set
+            $paymentGroup = InvoicePayment::findOrFail($payment->id);
 
-            foreach ($relatedPayments as $relPayment) {
-                // Delete related AccountTransaction
-                AccountTransaction::where([
-                    'account_id' => $relPayment->account_id,
-                    'amount' => $relPayment->amount,
-                    'reference' => 'Invoice #' . $relPayment->invoice->invoice_number ?? '',
-                ])->delete();
+            $groupId = $paymentGroup->group_id;
 
-                $relPayment->delete();
-            }
 
-            // 2. Remove any associated CustomerAdvance if created during previous update
-            CustomerAdvance::where([
-                'customer_id' => $customerId,
-                'type' => 'received',
-                'note' => 'Advance Payment',
-            ])->delete();
+            // ✅ Delete all existing payments and transactions for this group
+            InvoicePayment::where('group_id', $groupId)->delete();
+            AccountTransaction::where('group', $groupId)->delete();
 
-            // 3. Reapply payments based on new input
             $totalApplied = 0;
-
+            $usedDiscount = 0;
 
             foreach ($appliedAmounts as $invoiceId => $amount) {
                 $amount = (float) $amount;
                 if ($amount > 0) {
                     $invoice = Invoice::find($invoiceId);
+
                     if ($invoice) {
                         $dueBeforePayment = $invoice->amount_due;
                         $amountToApply = min($amount, $dueBeforePayment);
 
-                        if ($amountToApply > 0) {
-                            $invoice->payments()->create([
-                                'account_id'   => $accountId,
-                                'amount'       => $amountToApply,
-                                'payment_type' => 'invoice_payment',
-                                'method'       => $method,
-                                'note'         => $note,
-                                'payment_date' => $paymentDate,
-                            ]);
-
-                            AccountTransaction::create([
-                                'account_id' => $accountId,
-                                'type'       => 'invoice_payment',
-                                'amount'     => $amountToApply,
-                                'reference'  => 'Invoice #' . $invoice->invoice_number,
-                                'note'       => 'Due Payment applied to invoice.',
-                                'transaction_date' => $paymentDate,
-                            ]);
-
-                            $totalApplied += $amountToApply;
+                        // Apply discount only if this invoice exactly matches due+discount
+                        $discount = 0;
+                        if ($inputDiscount > 0 && $dueBeforePayment == $amountToApply + $inputDiscount) {
+                            $discount = $inputDiscount;
+                            $usedDiscount = $discount;
                         }
+
+                        // 💸 Save invoice payment
+                        $invoice->payments()->create([
+                            'group_id'     => $groupId,
+                            'account_id'   => $accountId,
+                            'amount'       => $amountToApply,
+                            'discount'     => $discount,
+                            'payment_type' => 'invoice_payment',
+                            'method'       => $method,
+                            'note'         => $note,
+                            'created_at'   => $paymentDate,
+                            'updated_at'   => now(),
+                        ]);
+
+                        // 💳 Log account transaction
+                        AccountTransaction::create([
+                            'account_id' => $accountId,
+                            'type'       => 'invoice_payment',
+                            'amount'     => $amountToApply + $discount,
+                            'reference'  => "Invoice #{$invoice->invoice_number}",
+                            'note'       => 'Updated due payment applied to invoice.',
+                            'group'      => $groupId,
+                        ]);
+
+                        $totalApplied += $amountToApply;
                     }
                 }
             }
 
-            // 4. Handle remaining as advance (if any)
-            $remainingAmount = $receivingAmount - $totalApplied;
+            if ($usedDiscount > 0) {
+                AccountTransaction::create([
+                    'account_id' => $accountId,
+                    'type'       => 'discount',
+                    'amount'     => -$usedDiscount,
+                    'reference'  => "Customer Discount",
+                    'note'       => 'Updated discount applied on payment.',
+                    'group'      => $groupId,
+                ]);
 
+                $totalApplied += $usedDiscount;
+            }
+
+
+            // Handle any remaining amount as an advance payment if totalApplied is less than receivingAmount
+            $remainingAmount = $receivingAmount - $totalApplied;
             if ($remainingAmount > 0) {
                 $customer = Customer::findOrFail($customerId);
 
@@ -386,6 +435,8 @@ class InvoicePaymentController extends Controller
                     'account_id'  => $accountId,
                     'note'        => $note ? $note . ' (Advance Payment)' : 'Advance Payment',
                     'created_at'  => $paymentDate,
+                    'updated_at'  => now(),
+                    'group_id'    => $groupId,
                 ]);
             }
 
@@ -409,26 +460,35 @@ class InvoicePaymentController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy($id)
+    public function destroy(InvoicePayment $payment)
     {
-        $invoicePayment = AccountTransaction::findOrFail($id);
-        DB::transaction(function () use ($invoicePayment) {
-            $paymentAccount = Account::find($invoicePayment->account_id);
+        DB::beginTransaction();
 
-            // Decrease balance from the account
-            $paymentAccount->decrement('balance', $invoicePayment->amount);
+        try {
+            $groupId = $payment->group_id;
 
-            // Optionally, find and delete/adjust the corresponding AccountTransaction
-            $accountTransaction = AccountTransaction::where('account_id', $invoicePayment->account_id)
-                ->where('amount', $invoicePayment->amount)
-                ->where('type', $invoicePayment->payment_type == 'invoice_payment' ? 'invoice_payment' : 'advance_payment')
-                ->latest()
-                ->first();
-            if ($accountTransaction) {
-                $accountTransaction->delete();
-            }
+            // Delete all invoice payments in the group
+            InvoicePayment::where('group_id', $groupId)->delete();
 
-            $invoicePayment->delete();
-        });
+            // Delete all related account transactions
+            AccountTransaction::where('group', $groupId)->delete();
+
+            // Optionally delete customer advances related to this group
+            CustomerAdvance::where('group_id', $groupId)->delete();
+
+            DB::commit();
+
+            return redirect()->route('admin.customer.index')->with([
+                'message'    => __('Payment deleted successfully!'),
+                'alert-type' => 'success'
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return back()->with([
+                'message'    => __('Failed to delete payment: ') . $e->getMessage(),
+                'alert-type' => 'error'
+            ]);
+        }
     }
 }

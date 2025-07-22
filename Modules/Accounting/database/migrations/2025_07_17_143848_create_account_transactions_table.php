@@ -17,6 +17,7 @@ return new class extends Migration
             $table->enum('type', ['deposit', 'expense', 'transfer_in', 'transfer_out', 'invoice_payment', 'advance_payment', 'discount']);
             $table->decimal('amount', 15, 2);
             $table->string('reference')->nullable();
+            $table->string('group')->nullable();
             $table->text('note')->nullable();
             $table->timestamps();
         });

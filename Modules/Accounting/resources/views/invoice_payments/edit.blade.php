@@ -1,25 +1,21 @@
 @extends('admin.layouts.master')
 
 @section('title')
-    <title>{{ isset($payment) ? __('Edit Customer Due Receive') : __('Customer Due Receive') }}</title>
+    <title>{{ __('Edit Customer Due Receive') }}</title>
 @endsection
 
 @section('admin-content')
     <div class="row">
         <div class="col-md-12">
-            <form method="POST"
-                action="{{ isset($payment) ? route('admin.invoice_payments.update', $payment->id) : route('admin.invoice_payments.store') }}"
+            <form method="POST" action="{{ route('admin.invoice_payments.update', $payment->id) }}"
                 enctype="multipart/form-data">
                 @csrf
-                @if (isset($payment))
-                    @method('PUT') {{-- Use PUT method for updates --}}
-                @endif
+                @method('PUT') {{-- Use PUT method for updates --}}
 
                 <input type="hidden" name="customer_id" value="{{ $customer->id }}">
                 <div class="card">
                     <div class="card-header">
-                        <h4 class="section_title">
-                            {{ isset($payment) ? __('Edit Customer Due Receive') : __('Customer Due Receive') }}</h4>
+                        <h4 class="section_title">{{ __('Edit Customer Due Receive') }}</h4>
                     </div>
                     <div class="card-body">
                         <div class="row">
@@ -107,7 +103,7 @@
                                                                 class="custom-control-input invoice-checkbox"
                                                                 id="invoice-checkbox-{{ $invoice->id }}"
                                                                 name="invoice_selected[]" value="{{ $invoice->id }}"
-                                                                data-due-amount="{{ $invoice->amount_due }}">
+                                                                data-due-amount="{{ $invoice->amount_due + ($appliedAmounts[$invoice->id] ?? 0.0) }}">
                                                             <label for="invoice-checkbox-{{ $invoice->id }}"
                                                                 class="custom-control-label">&nbsp;</label>
                                                         </div>
@@ -122,14 +118,15 @@
                                                         BDT {{ $invoice->total_amount }}
                                                     </td>
                                                     <td class="invoice-due-display">
-                                                        BDT {{ $invoice->amount_due }}
+                                                        BDT
+                                                        {{ $invoice->amount_due + ($appliedAmounts[$invoice->id] ?? 0.0) }}
                                                     </td>
                                                     <td>
                                                         <input type="number" class="form-control receiving-amount-input"
                                                             name="amounts[{{ $invoice->id }}]"
                                                             data-invoice-id="{{ $invoice->id }}" step="0.01"
                                                             min="0"
-                                                            value="{{ old('amounts.' . $invoice->id, isset($payment) && isset($payment->applied_amounts[$invoice->id]) ? $payment->applied_amounts[$invoice->id] : 0.0) }}">
+                                                            value="{{ old('amounts.' . $invoice->id, $appliedAmounts[$invoice->id] ?? 0.0) }}">
                                                     </td>
                                                 </tr>
                                             @empty
@@ -156,10 +153,9 @@
                                                 <input type="number" class="form-control" placeholder="Total Receivable"
                                                     aria-label="Total Receivable" aria-describedby="basic-addon11"
                                                     id="total_receivable_display" name="total_receivable_display"
-                                                    value="{{ $totalDue ?? ($payment->total_receivable ?? 0) }}"
-                                                    step="0.01" readonly />
+                                                    value="{{ $totalDue }}" step="0.01" readonly />
                                                 <input type="hidden" id="total_receivable_hidden"
-                                                    value="{{ $totalDue ?? ($payment->total_receivable ?? 0) }}">
+                                                    value="{{ $totalDue }}">
                                             </div>
                                         </div>
                                     </div>
@@ -169,7 +165,7 @@
                                             <label>{{ __('Payment Discount') }}</label>
                                             <input type="number" class="form-control" name="payment_discount"
                                                 id="payment_discount_input" step="0.01" min="0"
-                                                value="{{ old('payment_discount', $payment->discount ?? 0.0) }}">
+                                                value="{{ old('payment_discount', $totalDiscountForGroup ?? 0.0) }}">
                                             <small
                                                 class="form-text text-muted">{{ __('Optional discount applied to the total receivable amount for this payment.') }}</small>
                                         </div>
@@ -180,7 +176,7 @@
                                                     class="text-danger">*</span></label>
                                             <input type="number" class="form-control" name="receiving_amount"
                                                 id="total_receiving_amount_input" step="0.01" min="0" required
-                                                value="{{ old('receiving_amount', $payment->amount ?? 0.0) }}">
+                                                value="{{ old('receiving_amount', $totalAppliedToInvoices + ($totalDiscountForGroup ?? 0.0)) }}">
                                         </div>
                                     </div>
                                     {{-- Advance Amount Display --}}
@@ -201,7 +197,7 @@
                                         <div class="form-group">
                                             <label>{{ __('Receiving Date') }} <span class="text-danger">*</span></label>
                                             <input type="text" class="form-control datepicker" name="payment_date"
-                                                value="{{ old('payment_date', isset($payment) ? \Carbon\Carbon::parse($payment->created_at)->format('d-m-Y') : now()->format('d-m-Y')) }}"
+                                                value="{{ old('payment_date', \Carbon\Carbon::parse($payment->created_at)->format('d-m-Y')) }}"
                                                 autocomplete="off" required>
                                         </div>
                                     </div>
@@ -210,7 +206,7 @@
                         </div>
                         <div class="card-action d-flex justify-content-end">
                             <a href="{{ url()->previous() }}" class="btn btn-danger me-2">{{ __('Cancel') }}</a>
-                            <button type="submit" class="btn btn-success ">{{ __('Submit') }}</button>
+                            <button type="submit" class="btn btn-success ">{{ __('Update') }}</button>
                         </div>
                     </div>
                 </div>
@@ -264,7 +260,7 @@
             }
 
 
-            // 1. "Select All" checkbox handler
+
             $('#checkbox-all').on('click', function() {
                 const isChecked = $(this).prop('checked');
                 const totalReceivableOriginal = parseFloat($('#total_receivable_hidden').val());
@@ -387,23 +383,24 @@
                     const $thisInput = $(this);
                     const $thisCheckbox = $thisInput.closest('tr').find('.invoice-checkbox');
                     const dueAmount = parseFloat($thisCheckbox.data('due-amount'));
-
-                    if (amountForInvoiceAllocation <= 0) {
-                        $thisInput.val('0.00');
-                        $thisCheckbox.prop('checked', false);
-                        return true;
-                    }
-
-                    if (dueAmount > 0) {
+                    let currentVal = parseFloat($thisInput.val());
+                    if (isNaN(currentVal) || currentVal <= 0) {
+                        if (amountForInvoiceAllocation <= 0 || dueAmount <= 0) {
+                            $thisInput.val('0.00');
+                            $thisCheckbox.prop('checked', false);
+                            return true;
+                        }
                         const amountToApply = Math.min(amountForInvoiceAllocation, dueAmount);
+                        console.log(amountToApply);
                         $thisInput.val(amountToApply.toFixed(2));
                         $thisCheckbox.prop('checked', true);
                         amountForInvoiceAllocation -= amountToApply;
                     } else {
-                        $thisInput.val('0.00');
-                        $thisCheckbox.prop('checked', false);
+                        // Keep existing input value, just make sure checkbox is checked
+                        $thisCheckbox.prop('checked', true);
                     }
                 });
+
                 updateSelectAllCheckbox();
             });
 
@@ -414,7 +411,9 @@
                 $('#payment_discount_input').trigger('input');
                 $('#total_receiving_amount_input').trigger('input');
             @else
-                updateAdvanceAmountDisplay(); // Ensure initial display of advance amount is correct
+
+                updateTotalReceivingAmount();
+                updateSelectAllCheckbox();
             @endif
 
             // Initialize datepicker
@@ -428,15 +427,11 @@
                 console.warn('jQuery UI Datepicker not found. Please ensure it\'s loaded.');
             }
 
-            // Initial calculation on page load (if any pre-filled values exist)
-            // This will also trigger updateAdvanceAmountDisplay and updateSelectAllCheckbox
-            updateTotalReceivingAmount();
-            updateSelectAllCheckbox();
-
             // If in edit mode, pre-fill invoice amounts and check boxes
+            // This block will run only when the page is loaded for editing
             @if (isset($payment))
                 // Store applied amounts for easy access in JS
-                const appliedAmounts = @json($payment->applied_amounts ?? []);
+                const appliedAmounts = @json($appliedAmounts ?? []);
 
                 // Set initial total receivable for edit mode
                 $('#total_receivable_hidden').val("{{ $totalDue ?? 0 }}");

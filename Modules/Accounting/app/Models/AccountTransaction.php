@@ -19,6 +19,7 @@ class AccountTransaction extends Model
         'amount',
         'reference',
         'note',
+        'group'
     ];
 
     public function account()

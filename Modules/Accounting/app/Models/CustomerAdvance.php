@@ -18,7 +18,8 @@ class CustomerAdvance extends Model
         'type',
         'related_invoice_id',
         'account_id',
-        'note'
+        'note',
+        'group'
     ];
 
     public function customer()

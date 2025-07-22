@@ -78,6 +78,14 @@ class DashboardController extends Controller
             ->whereBetween('created_at', [$startDate, $endDate])
             ->sum('amount');
 
+        $invoicesInPeriod = Invoice::whereBetween('invoice_date', [$startDate, $endDate])->get();
+
+        $customersDue = 0;
+        foreach ($invoicesInPeriod as $invoice) {
+            $totalPaidForInvoice = $invoice->payments()->sum('amount');
+            $totalDiscount = $invoice->discount_amount;
+            $customersDue += ($invoice->total_amount - $totalPaidForInvoice) - $totalDiscount;
+        }
 
         return view('admin.dashboard', compact(
             'totalBalance',
@@ -89,6 +97,7 @@ class DashboardController extends Controller
             'totalCustomers',
             'totalExpensesCurrentPeriod',
             'totalProducts',
+            'customersDue',
             'filter',
             'filterText'
         ));

@@ -96,6 +96,14 @@
                         </div>
                     </div>
 
+                    <div class="d-flex align-items-center mb-3"> {{-- Added mb-3 for spacing --}}
+                        <i class="fas fa-dollar-sign fs-4 me-3 text-danger"></i> {{-- Icon for due amount --}}
+                        <div>
+                            <h5 class="mb-0">BDT {{ number_format($customersDue, 2) }}</h5>
+                            <p class="text-muted mb-0">Customers Due</p> {{-- Label for due amount --}}
+                        </div>
+                    </div>
+
                     <div class="d-flex align-items-center">
                         <i class="fas fa-box-open fs-4 me-3 text-success"></i>
                         <div>

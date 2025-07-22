@@ -16,6 +16,7 @@ class GlobalSettingInfoSeeder extends Seeder
 
         $setting_data = [
             'app_name' => 'Unique Cargo',
+            'copyright_text' => 'Copyright © {year} Unique Cargo. All rights reserved.',
             'version' => '1.0.0',
             'theme' => 1,
             'logo' => 'uploads/website-images/logo_1.png',

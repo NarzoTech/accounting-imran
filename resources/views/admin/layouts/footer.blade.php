@@ -2,7 +2,11 @@
     <div class="container-fluid">
         <div class="footer-container">
             <div class="text-body text-center w-100">
-                <b>{{ $setting->copyright_text }}</b>
+                @php
+                    $copyright = $setting->copyright_text;
+                    $copyright = str_replace('{year}', date('Y'), $copyright);
+                @endphp
+                <b>{{ $copyright }}</b>
             </div>
         </div>
     </div>

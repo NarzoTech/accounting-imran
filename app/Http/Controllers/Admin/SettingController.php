@@ -9,6 +9,5 @@ class SettingController extends Controller
     public function settings()
     {
         return view('admin.settings.settings');
-
     }
 }
